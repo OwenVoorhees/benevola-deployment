@@ -195,20 +195,30 @@ function TagFilter({ allTags, tagsLoading, selected, onChange }) {
 }
 
 /* ── Event card ──────────────────────────────────────────────────── */
-function EventCard({ event }) {
+function EventCard({ event, orgName }) {
   const visibleTags   = event.tagObjects.slice(0, 3);
   const overflowCount = event.tagObjects.length - visibleTags.length;
 
   return (
-    <Link to={`/events/${event.id}`} className="evts-card">
+    <article className="evts-card">
       <div className="evts-card-img">
         {event.heroImage
           ? <img src={event.heroImage} alt={event.title} />
           : <div className="evts-card-img-placeholder" />}
       </div>
       <div className="evts-card-body">
-        <div className="evts-card-org">Org #{event.organizationId}</div>
-        <h3 className="evts-card-title">{event.title}</h3>
+        <Link
+          to={`/organizations/${event.organizationId}`}
+          className="evts-card-org"
+        >
+          {orgName ?? `Org #${event.organizationId}`}
+        </Link>
+
+        <h3 className="evts-card-title">
+          <Link to={`/events/${event.id}`} className="evts-card-title-link">
+            {event.title}
+          </Link>
+        </h3>
 
         {event.description && (
           <p className="evts-card-desc">{event.description}</p>
@@ -236,10 +246,10 @@ function EventCard({ event }) {
 
         <div className="evts-card-footer">
           {event.address && <span className="evts-card-address">{event.address}</span>}
-          <span className="evts-card-cta">View event →</span>
+          <Link to={`/events/${event.id}`} className="evts-card-cta">View event →</Link>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -251,6 +261,8 @@ function EventsPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError,   setEventsError]   = useState(false);
   const [page,          setPage]          = useState(0);
+  const [orgNames,      setOrgNames]      = useState({});
+  const orgCacheRef = useRef({});
 
   const [allTags,     setAllTags]     = useState([]);
   const [tagsLoading, setTagsLoading] = useState(true);
@@ -303,6 +315,26 @@ function EventsPage() {
   }, []);
 
   useEffect(() => { runFetch(appliedFilters, page); }, [appliedFilters, page, runFetch]);
+
+  /* Fetch org names for visible events, using a cache to avoid re-fetching */
+  useEffect(() => {
+    if (events.length === 0) return;
+    const needed = [...new Set(events.map(e => e.organizationId))]
+      .filter(id => id != null && !(id in orgCacheRef.current));
+    if (needed.length === 0) return;
+    Promise.all(
+      needed.map(id =>
+        fetch(`${API}/api/orgs/${id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => [id, data?.data?.name ?? data?.name ?? null])
+          .catch(() => [id, null])
+      )
+    ).then(pairs => {
+      const updates = Object.fromEntries(pairs);
+      orgCacheRef.current = { ...orgCacheRef.current, ...updates };
+      setOrgNames(prev => ({ ...prev, ...updates }));
+    });
+  }, [events]);
 
   /* Validate + apply filters */
   const handleSearch = () => {
@@ -599,7 +631,7 @@ function EventsPage() {
                 </div>
                 <div className="evts-grid">
                   {events.map(evt => (
-                    <EventCard key={evt.id} event={evt} />
+                    <EventCard key={evt.id} event={evt} orgName={orgNames[evt.organizationId] ?? null} />
                   ))}
                 </div>
               </>

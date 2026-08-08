@@ -25,14 +25,14 @@ export const CaretIcon = ({ open }) => (
   </svg>
 );
 
-export const ArrowRight = () => (
-  <svg className="arrow" viewBox="0 0 14 14" fill="none">
+export const ArrowRight = ({ size = 12 }) => (
+  <svg className="arrow" width={size} height={size} viewBox="0 0 14 14" fill="none">
     <path d="M2 7H12M12 7L8 3M12 7L8 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-export const IconSearch = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+export const IconSearch = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
     <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.8" />
     <path d="M16 16L20 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
   </svg>
@@ -45,8 +45,8 @@ export const IconCalendar = ({ size = 22 }) => (
   </svg>
 );
 
-export const IconHands = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+export const IconHands = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
     <path
       d="M7 13V8C7 7 8 6 9 7V10M11 13V6C11 5 12 4 13 5V11M15 13V8C15 7 16 6 17 7V14C17 18 14 21 11 21C8 21 5 18 5 14V12C5 11 6 10 7 11"
       stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
@@ -54,8 +54,8 @@ export const IconHands = () => (
   </svg>
 );
 
-export const IconBuilding = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+export const IconBuilding = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
     <path
       d="M4 20V6L12 3V20M12 20V9L20 7V20M4 20H20M7 9H9M7 13H9M7 17H9M15 12H17M15 16H17"
       stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
@@ -63,15 +63,15 @@ export const IconBuilding = () => (
   </svg>
 );
 
-export const IconCompass = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+export const IconCompass = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
     <path d="M15 9L13 13L9 15L11 11L15 9Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
   </svg>
 );
 
-export const IconUser = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+export const IconUser = ({ size = 22 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
     <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.6" />
     <path d="M4 21C4 16.5 7.5 14 12 14C16.5 14 20 16.5 20 21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>

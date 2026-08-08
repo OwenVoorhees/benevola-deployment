@@ -5,11 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Header.css';
 
 function Header() {
-  const { auth, logout }  = useAuth();
-  const navigate          = useNavigate();
-  const [open, setOpen]   = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-  const dropdownRef       = useRef(null);
+  const { auth, logout }        = useAuth();
+  const navigate                 = useNavigate();
+  const [openMenu, setOpenMenu]  = useState(null); // null | 'org' | 'vol'
+  const [theme, setTheme]        = useState(() => localStorage.getItem('theme') || 'light');
+  const orgRef                   = useRef(null);
+  const volRef                   = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -17,25 +18,36 @@ function Header() {
   }, [theme]);
 
   useEffect(() => {
-    function handleOutsideClick(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false);
+    function handleOutside(e) {
+      if (!orgRef.current?.contains(e.target) && !volRef.current?.contains(e.target)) {
+        setOpenMenu(null);
       }
     }
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
+
+  const toggle = menu => setOpenMenu(o => o === menu ? null : menu);
+  const close  = ()   => setOpenMenu(null);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
-  /* Volunteer display name — email or display name from API response */
   const displayName = auth?.user?.name
     ?? auth?.user?.displayName
     ?? auth?.user?.email
     ?? 'Volunteer';
+
+  const postEventTo = auth?.type === 'organization'
+    ? `/organizations/${auth.user?.organizationId ?? auth.user?.id}`
+    : '/login?role=organization';
+
+  const orgId  = auth?.user?.organizationId ?? auth?.user?.id;
+  const volId  = auth?.user?.id;
+  const isOrg  = auth?.type === 'organization';
+  const isVol  = auth != null && !isOrg;
 
   return (
     <header className="nav">
@@ -45,16 +57,52 @@ function Header() {
       </Link>
 
       <nav className="nav-links">
-        <div className="nav-dropdown-wrap" ref={dropdownRef}>
-          <button className="nav-link has-caret" onClick={() => setOpen(o => !o)}>
-            Organizations <CaretIcon open={open} />
+
+        {/* Organizations dropdown */}
+        <div className="nav-dropdown-wrap" ref={orgRef}>
+          <button className="nav-link has-caret" onClick={() => toggle('org')}>
+            Organizations <CaretIcon open={openMenu === 'org'} />
           </button>
-          {open && (
+          {openMenu === 'org' && (
             <div className="dropdown" role="menu">
-              <a href="#register"><span className="dot" />Register your organization</a>
-              <a href="#post"><span className="dot" />Post a volunteer event</a>
-              <a href="#corporate"><span className="dot" />For corporate partners</a>
-              <a href="#directory"><span className="dot" />Verified directory</a>
+              {isOrg ? (
+                <Link to={`/organizations/${orgId}`} onClick={close}>
+                  <span className="dot" />Your Organization
+                </Link>
+              ) : (
+                <Link to="/signup?role=organization" onClick={close}>
+                  <span className="dot" />Register your organization
+                </Link>
+              )}
+              <Link to={postEventTo} onClick={close}>
+                <span className="dot" />Post a volunteer event
+              </Link>
+              <Link to="/organizations" onClick={close}>
+                <span className="dot" />Browse organizations
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Volunteers dropdown */}
+        <div className="nav-dropdown-wrap" ref={volRef}>
+          <button className="nav-link has-caret" onClick={() => toggle('vol')}>
+            Volunteers <CaretIcon open={openMenu === 'vol'} />
+          </button>
+          {openMenu === 'vol' && (
+            <div className="dropdown" role="menu">
+              {isVol ? (
+                <Link to={`/volunteer/${volId}`} onClick={close}>
+                  <span className="dot" />Your Profile
+                </Link>
+              ) : (
+                <Link to="/signup" onClick={close}>
+                  <span className="dot" />Create your profile
+                </Link>
+              )}
+              <Link to="/events" onClick={close}>
+                <span className="dot" />Find opportunities
+              </Link>
             </div>
           )}
         </div>
@@ -77,7 +125,12 @@ function Header() {
                 Your Organization
               </Link>
             ) : (
-              <span className="nav-user-name">{displayName}</span>
+              <Link
+                to={`/volunteer/${auth.user?.id}`}
+                className="nav-link"
+              >
+                My Profile
+              </Link>
             )}
             <button className="nav-link nav-link-accent" onClick={handleLogout}>
               Log Out

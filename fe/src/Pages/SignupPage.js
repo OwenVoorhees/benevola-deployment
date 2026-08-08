@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles/Auth.css';
 
 import Header from '../Components/Header';
 import Footer from '../Components/Footer';
 import { LeafLogo, ArrowRight, EyeIcon } from '../Components/Icons';
+import { useAuth } from '../context/AuthContext';
 
 const VOL_FEATURES = [
   'Browse verified opportunities near you',
@@ -44,15 +45,18 @@ function Field({ label, required, error, children }) {
 }
 
 function SignupPage() {
+  const { login }                 = useAuth();
+  const navigate                  = useNavigate();
   const [searchParams]            = useSearchParams();
   const initialRole               = searchParams.get('role') === 'organization' ? 'organization' : 'volunteer';
   const [role, setRole]           = useState(initialRole);
   const [showPw, setShowPw]       = useState(false);
   const [showCPw, setShowCPw]     = useState(false);
   const [errors, setErrors]       = useState({});
-  const [submitted, setSubmitted] = useState(false);
+  const [apiError, setApiError]   = useState('');
+  const [loading, setLoading]     = useState(false);
   const [form, setForm]           = useState({
-    displayName: '', email: '', password: '', confirmPassword: '',
+    username: '', email: '', password: '', confirmPassword: '',
     description: '', phone: '', address: '',
   });
 
@@ -60,18 +64,54 @@ function SignupPage() {
 
   const validate = () => {
     const e = {};
-    if (!form.displayName.trim())                   e.displayName      = 'Display name is required';
-    if (!form.email.includes('@'))                   e.email            = 'Enter a valid email address';
-    if (form.password.length < 8)                   e.password         = 'Minimum 8 characters';
-    if (form.password !== form.confirmPassword)      e.confirmPassword  = "Passwords don't match";
+    if (!form.username.trim())                  e.username        = 'Username is required';
+    if (!form.email.includes('@'))              e.email           = 'Enter a valid email address';
+    if (form.password.length < 8)              e.password        = 'Minimum 8 characters';
+    if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords don't match";
     return e;
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
-    setSubmitted(true);
+
+    setLoading(true);
+    setApiError('');
+
+    const url = role === 'organization'
+      ? `${process.env.REACT_APP_API_URL}/api/auth/register/org`
+      : `${process.env.REACT_APP_API_URL}/api/auth/register/user`;
+
+    try {
+      const res  = await fetch(url, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          username: form.username,
+          email:    form.email,
+          password: form.password,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        const raw = data.message || data.error || '';
+        const msg = /unique constraint/i.test(raw)
+          ? 'That username or email is already taken. Please choose a different one.'
+          : raw || 'Registration failed. Please try again.';
+        setApiError(msg);
+        setLoading(false);
+        return;
+      }
+
+      const userData = data.user ?? data.org ?? data;
+      login(role, userData);
+      navigate('/');
+    } catch {
+      setApiError('Could not reach the server. Check your connection.');
+      setLoading(false);
+    }
   };
 
   const features     = role === 'organization' ? ORG_FEATURES  : VOL_FEATURES;
@@ -101,17 +141,7 @@ function SignupPage() {
 
           {/* ── Right panel ── */}
           <div className="auth-panel-right">
-            {submitted ? (
-              <div className="auth-success">
-                <div className="success-circle">✓</div>
-                <h2>You're in.</h2>
-                <p>Account created as a <strong>{role}</strong>. Head to login to get started.</p>
-                <Link className="auth-success-btn" to="/login">
-                  Log in now <ArrowRight />
-                </Link>
-              </div>
-            ) : (
-              <>
+            <>
                 <div className="auth-form-head">
                   <h1 className="auth-title">Create account</h1>
                   <p className="auth-sub">Free to join. Takes about a minute.</p>
@@ -135,13 +165,14 @@ function SignupPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} noValidate>
-                  <Field label="Display Name" required error={errors.displayName}>
+                  <Field label="Username" required error={errors.username}>
                     <input
-                      className={'form-input' + (errors.displayName ? ' err' : '')}
+                      className={'form-input' + (errors.username ? ' err' : '')}
                       type="text"
-                      placeholder={role === 'organization' ? 'e.g. Green Future Society' : 'e.g. Jane Smith'}
-                      value={form.displayName}
-                      onChange={set('displayName')}
+                      placeholder={role === 'organization' ? 'e.g. green_future' : 'e.g. janesmith'}
+                      value={form.username}
+                      onChange={set('username')}
+                      autoComplete="username"
                     />
                   </Field>
 
@@ -232,16 +263,19 @@ function SignupPage() {
                     </div>
                   )}
 
-                  <button type="submit" className="auth-submit">
-                    Create Account <ArrowRight />
+                  {apiError && (
+                    <div className="auth-api-error">{apiError}</div>
+                  )}
+
+                  <button type="submit" className="auth-submit" disabled={loading}>
+                    {loading ? 'Creating account…' : <> Create Account <ArrowRight /> </>}
                   </button>
                 </form>
 
                 <p className="auth-switch">
                   Already have an account? <Link to="/login">Log in →</Link>
                 </p>
-              </>
-            )}
+            </>
           </div>
         </div>
       </main>

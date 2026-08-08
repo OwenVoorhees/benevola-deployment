@@ -1,34 +1,35 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ScrollToTop from './Components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
+import { DesignProvider } from './design/DesignContext';
+import DesignSwitcher from './design/DesignSwitcher';
+import Surface from './design/Surface';
 import './styles/App.css';
-import LandingPage  from './Pages/LandingPage';
-import LoginPage    from './Pages/LoginPage';
-import SignupPage   from './Pages/SignupPage';
-import AboutPage    from './Pages/AboutPage';
-import EventPage    from './Pages/EventPage';
-import EventsPage   from './Pages/EventsPage';
-import OrgPage      from './Pages/OrgPage';
-import OrgsPage     from './Pages/OrgsPage';
-import NotFoundPage from './Pages/NotFoundPage';
+
+/* Routes name a surface; the active design decides which component renders.
+   See src/design/config.js to lock in one design permanently. */
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/"                  element={<LandingPage />} />
-          <Route path="/login"             element={<LoginPage />} />
-          <Route path="/signup"            element={<SignupPage />} />
-          <Route path="/about"             element={<AboutPage />} />
-          <Route path="/events"            element={<EventsPage />} />
-          <Route path="/events/:id"        element={<EventPage />} />
-          <Route path="/organizations"     element={<OrgsPage />} />
-          <Route path="/organizations/:id" element={<OrgPage />} />
-          <Route path="*"                  element={<NotFoundPage />} />
-        </Routes>
-      </Router>
+      <DesignProvider>
+        <Router>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/"                  element={<Surface name="Landing" />} />
+            <Route path="/login"             element={<Surface name="Login" />} />
+            <Route path="/signup"            element={<Surface name="Signup" />} />
+            <Route path="/about"             element={<Surface name="About" />} />
+            <Route path="/events"            element={<Surface name="Events" />} />
+            <Route path="/events/:id"        element={<Surface name="Event" />} />
+            <Route path="/organizations"     element={<Surface name="Orgs" />} />
+            <Route path="/organizations/:id" element={<Surface name="Org" />} />
+            <Route path="/volunteer/:id"     element={<Surface name="Volunteer" />} />
+            <Route path="*"                  element={<Surface name="NotFound" />} />
+          </Routes>
+          <DesignSwitcher />
+        </Router>
+      </DesignProvider>
     </AuthProvider>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
@@ -383,6 +383,7 @@ function EventPage() {
   const [loadError, setLoadError] = useState(false);
   const [toastMsg,  setToastMsg]  = useState('');
   const [toastShow, setToastShow] = useState(false);
+  const [orgName,     setOrgName]     = useState(null);
   const [allTags,     setAllTags]     = useState([]);
   const [tagsLoading, setTagsLoading] = useState(true);
   const [tagsError,   setTagsError]   = useState(false);
@@ -400,8 +401,19 @@ function EventPage() {
     setLoadError(false);
     setEditing(false);
     setRsvped(false);
+    setOrgName(null);
     getEvent(id)
-      .then(data => { setEvent(data); setDraft(data); setLoading(false); })
+      .then(data => {
+        setEvent(data);
+        setDraft(data);
+        setLoading(false);
+        if (data.organizationId) {
+          fetch(`${process.env.REACT_APP_API_URL}/api/orgs/${data.organizationId}`)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(res => setOrgName(res.data?.name ?? res.name ?? null))
+            .catch(() => {});
+        }
+      })
       .catch(() => { setLoadError(true); setLoading(false); });
   }, [id]);
 
@@ -476,103 +488,107 @@ function EventPage() {
           { label: displayTitle },
         ]} />
 
-        {/* Hero */}
-        <div className="event-hero">
-          {event.heroImage
-            ? <img src={event.heroImage} alt={event.title} />
-            : <div className="event-hero-placeholder" />}
-          <div className="event-org-badge">
-            <LeafLogo size={20} gradId="leaf-grad-event" />
-            Org #{event.organizationId}
-          </div>
-        </div>
+        {/* ── Top zone: image left, RSVP + map right ── */}
+        <div className="event-top">
 
-        {/* Two-column body */}
-        <div className="event-body">
+          {/* Hero image — narrower, fills left column height */}
+          <div className="event-hero">
+            {event.heroImage
+              ? <img src={event.heroImage} alt={event.title} />
+              : <div className="event-hero-placeholder" />}
 
-          {/* ─── Left column ─── */}
-          <div>
-            <div className="event-title-row">
-              {editing ? (
-                <div style={{ flex: 1 }}>
-                  <FieldLabel>Event Title</FieldLabel>
-                  <EvtInput value={draft.title} onChange={set('title')} placeholder="Event name" className="large" />
-                </div>
-              ) : (
-                <h1 className="event-title">{event.title}</h1>
-              )}
+            <div className="event-hero-overlay">
+              <div className="event-hero-meta">
+                <Link
+                  to={`/organizations/${event.organizationId}`}
+                  className="event-org-badge"
+                >
+                  <LeafLogo size={16} gradId="leaf-grad-event" />
+                  {orgName ?? `Org #${event.organizationId}`}
+                </Link>
+                <h1 className="event-title">
+                  {editing ? (draft.title || 'Untitled event') : event.title}
+                </h1>
+              </div>
               {!editing && (
-                <button className="evt-btn evt-btn--ghost evt-btn--sm" onClick={startEdit} style={{ flexShrink: 0, marginTop: 8 }}>
-                  <IconEdit /> Edit Event
+                <button className="evt-btn-hero-edit" onClick={startEdit}>
+                  <IconEdit size={14} /> Edit
                 </button>
               )}
             </div>
+          </div>
 
-            {!editing && (
-              <>
-                <div className="event-meta-pills">
-                  <span className="evt-pill evt-pill--muted">
-                    <IconCalendar size={16} /> {formatDate(event.date)}
-                  </span>
-                  <span className="evt-pill evt-pill--outline">
-                    <IconClock /> {formatDuration(event.duration)}
-                  </span>
-                  <span className="evt-pill evt-pill--filled">
-                    <IconUsers /> {event.spotsLeft} spots left of {event.capacity}
-                  </span>
-                </div>
-                {event.tags && event.tags.length > 0 && (
-                  <div className="event-tags">
-                    {event.tags.map(slug => {
-                      const label = allTags.find(t => t.slug === slug)?.name ?? slug;
-                      return <TagChip key={slug} label={label} />;
-                    })}
-                  </div>
-                )}
-              </>
+          {/* Right: RSVP only */}
+          <div className="event-sidebar">
+            <RSVPCard
+              event={event}
+              draft={draft}
+              editing={editing}
+              rsvped={rsvped}
+              onRsvp={handleRsvp}
+            />
+          </div>
+        </div>
+
+        {/* ── Bottom section: content left, map right ── */}
+        <div className="event-bottom">
+
+          {/* Left: tags, pills, description, edit fields, timestamps */}
+          <div className="event-main-col">
+
+            {editing && (
+              <div style={{ marginBottom: 20 }}>
+                <FieldLabel>Event Title</FieldLabel>
+                <EvtInput value={draft.title} onChange={set('title')} placeholder="Event name" className="large" />
+              </div>
             )}
 
-            <div className="event-description" style={{ marginBottom: 28 }}>
+            {!editing && event.tags && event.tags.length > 0 && (
+              <div className="event-tags">
+                {event.tags.map(slug => {
+                  const label = allTags.find(t => t.slug === slug)?.name ?? slug;
+                  return <TagChip key={slug} label={label} />;
+                })}
+              </div>
+            )}
+
+            {!editing && (
+              <div className="event-meta-pills">
+                <span className="evt-pill evt-pill--muted">
+                  <IconCalendar size={14} /> {formatDate(event.date)}
+                </span>
+                <span className="evt-pill evt-pill--outline">
+                  <IconClock size={14} /> {formatDuration(event.duration)}
+                </span>
+                <span className="evt-pill evt-pill--filled">
+                  <IconUsers size={14} /> {event.spotsLeft} spots left of {event.capacity}
+                </span>
+              </div>
+            )}
+
+            <div className="event-description">
               {editing ? (
                 <>
                   <FieldLabel>Description</FieldLabel>
-                  <EvtTextarea value={draft.description} onChange={set('description')} rows={7} />
+                  <EvtTextarea value={draft.description} onChange={set('description')} rows={6} />
                 </>
               ) : (
                 (event.description || '').split('\n\n').map((para, i) => <p key={i}>{para}</p>)
               )}
             </div>
 
-            <div className="event-location" style={{ marginBottom: editing ? 20 : 0 }}>
-              <div className="event-location-icon"><IconPin /></div>
-              <div className="event-location-text">
-                <FieldLabel>Location</FieldLabel>
-                {editing ? (
+            {editing && (
+              <>
+                <div style={{ marginBottom: 20 }}>
+                  <FieldLabel>Location</FieldLabel>
                   <AddressAutocomplete
                     value={draft.address ?? ''}
                     onAddressChange={val => setDraft(d => ({ ...d, address: val }))}
                     onSelect={setLocation}
                   />
-                ) : (
-                  <div className="event-location-address">{event.address}</div>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div className="event-meta-timestamps">
-              <div className="event-meta-ts-item">
-                <span className="evt-label">Created</span>
-                <span className="event-meta-ts-value">{formatDateTime(event.createdAt)}</span>
-              </div>
-              <div className="event-meta-ts-item">
-                <span className="evt-label">Last Updated</span>
-                <span className="event-meta-ts-value">{formatDateTime(event.updatedAt)}</span>
-              </div>
-            </div>
-
-            {editing && (
-              <>
-                <div style={{ marginTop: 24, marginBottom: 24 }}>
+                <div style={{ marginBottom: 20 }}>
                   <TagEditor
                     allTags={allTags}
                     tagsLoading={tagsLoading}
@@ -593,7 +609,7 @@ function EventPage() {
                   </div>
                 </div>
 
-                <div>
+                <div style={{ marginBottom: 24 }}>
                   <FieldLabel>Date &amp; Time</FieldLabel>
                   <input
                     type="datetime-local"
@@ -604,37 +620,41 @@ function EventPage() {
                 </div>
               </>
             )}
+
+            <div className="event-meta-timestamps">
+              <div className="event-meta-ts-item">
+                <span className="evt-label">Created</span>
+                <span className="event-meta-ts-value">{formatDateTime(event.createdAt)}</span>
+              </div>
+              <div className="event-meta-ts-item">
+                <span className="evt-label">Last Updated</span>
+                <span className="event-meta-ts-value">{formatDateTime(event.updatedAt)}</span>
+              </div>
+            </div>
           </div>
 
-          {/* ─── Right column ─── */}
-          <div className="event-sidebar">
-            <RSVPCard
-              event={event}
-              draft={draft}
-              editing={editing}
-              rsvped={rsvped}
-              onRsvp={handleRsvp}
-            />
-
-            <div className="event-map-card">
-              <span className="evt-label">Map</span>
-              <EventMap
-                lat={mapLat}
-                lng={mapLng}
-                editing={editing}
-                onLocationChange={setLocation}
-              />
-              <div className="event-map-address">
-                <span className="event-map-address-icon"><IconPin /></span>
-                <span>{editing ? (draft.address || 'No address set') : (event.address || 'No address')}</span>
-              </div>
-              {(mapLat != null && mapLng != null) && (
-                <div className="event-map-coords">
-                  <span>lat {typeof mapLat === 'number' ? mapLat.toFixed(5) : mapLat}</span>
-                  <span>lng {typeof mapLng === 'number' ? mapLng.toFixed(5) : mapLng}</span>
-                </div>
+          {/* Right: map */}
+          <div className="event-map-card">
+            <div className="event-map-card-header">
+              <span className="evt-label">Location</span>
+              {(event.address || (editing && draft.address)) && (
+                <span className="event-map-address-text">
+                  {editing ? draft.address : event.address}
+                </span>
               )}
             </div>
+            <EventMap
+              lat={mapLat}
+              lng={mapLng}
+              editing={editing}
+              onLocationChange={setLocation}
+            />
+            {(mapLat != null && mapLng != null) && (
+              <div className="event-map-coords">
+                <span>lat {typeof mapLat === 'number' ? mapLat.toFixed(5) : mapLat}</span>
+                <span>lng {typeof mapLng === 'number' ? mapLng.toFixed(5) : mapLng}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

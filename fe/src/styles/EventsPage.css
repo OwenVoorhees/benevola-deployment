@@ -471,6 +471,13 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--green-700);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.evts-card-org:hover {
+  text-decoration: underline;
+  color: var(--green-900);
 }
 
 .evts-card-title {
@@ -480,6 +487,15 @@
   line-height: 1.3;
   color: var(--text);
   letter-spacing: -0.01em;
+}
+
+.evts-card-title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.evts-card-title-link:hover {
+  text-decoration: underline;
 }
 
 .evts-card-desc {
@@ -555,10 +571,12 @@
   color: var(--green-700);
   white-space: nowrap;
   flex-shrink: 0;
+  text-decoration: none;
 }
 
-.evts-card:hover .evts-card-cta {
+.evts-card-cta:hover {
   color: var(--green-900);
+  text-decoration: underline;
 }
 
 /* ── Address autocomplete ────────────────────────────────────────── */

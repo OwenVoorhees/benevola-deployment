@@ -71,7 +71,7 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 230px;
+  width: max-content;
   background: var(--surface);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
@@ -90,6 +90,7 @@
   color: var(--text);
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
   transition: background 0.12s;
 }
 
