@@ -35,13 +35,8 @@ function Header() {
     navigate('/');
   };
 
-  const displayName = auth?.user?.name
-    ?? auth?.user?.displayName
-    ?? auth?.user?.email
-    ?? 'Volunteer';
-
   const postEventTo = auth?.type === 'organization'
-    ? `/organizations/${auth.user?.organizationId ?? auth.user?.id}`
+    ? `/organizations/${auth.user?.organizationId ?? auth.user?.id}/events/new`
     : '/login?role=organization';
 
   const orgId  = auth?.user?.organizationId ?? auth?.user?.id;

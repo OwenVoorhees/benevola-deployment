@@ -45,7 +45,7 @@ function Field({ label, required, error, children }) {
 }
 
 function SignupPage() {
-  const { login }                 = useAuth();
+  const { refresh }               = useAuth();
   const navigate                  = useNavigate();
   const [searchParams]            = useSearchParams();
   const initialRole               = searchParams.get('role') === 'organization' ? 'organization' : 'volunteer';
@@ -85,9 +85,10 @@ function SignupPage() {
 
     try {
       const res  = await fetch(url, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({
           username: form.username,
           email:    form.email,
           password: form.password,
@@ -105,8 +106,17 @@ function SignupPage() {
         return;
       }
 
-      const userData = data.user ?? data.org ?? data;
-      login(role, userData);
+      /* Registration signs you in via a session cookie — read the account back
+         from the server so we store the real record, and so a cookie that never
+         stuck is caught here instead of looking signed in but acting logged out. */
+      const me = await refresh().catch(() => null);
+
+      if (!me) {
+        setApiError('Account created, but your browser did not keep the session. Check that cookies are enabled, then log in.');
+        setLoading(false);
+        return;
+      }
+
       navigate('/');
     } catch {
       setApiError('Could not reach the server. Check your connection.');

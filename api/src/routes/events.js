@@ -141,7 +141,7 @@ router.put('/:eid',
         reqKey: "event"
     }),
     parseTags(Tag, false),
-    verifyOwnership(req => req.org.organizationId),
+    verifyOwnership(req => req.event.organizationId),
     async (req, res, next) => {
         const event = req.event;
         const body = req.validatedBody;
@@ -180,7 +180,7 @@ router.patch('/:eid',
         reqKey: "event"
     }),
     parseTags(Tag),
-    verifyOwnership(req => req.org.organizationId),
+    verifyOwnership(req => req.event.organizationId),
     async (req, res, next) => {
         const event = req.event;
         const body = req.validatedBody;
@@ -191,7 +191,7 @@ router.patch('/:eid',
                     event.set(body);
                     await event.save({ transaction: t });
                 }
-                if (tags !== undefined){
+                if (req.tags !== undefined){
                     await event.setTags(req.parsedTags, { transaction: t });
                 }
                 const tags = await event.getTags({ transaction: t });

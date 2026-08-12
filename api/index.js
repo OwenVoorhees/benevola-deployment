@@ -14,6 +14,7 @@ require("./src/models/associations");
 const BE_PORT = process.env.BE_PORT || 5173;
 const FE_PORT = process.env.FE_PORT || 3000;
 const DOMAIN = process.env.DOMAIN;
+const IS_PROD = process.env.NODE_ENV === "production";
 
 // Middleware to parse JSON bodies
 app.use(express.urlencoded({ extended: true }));
@@ -27,42 +28,6 @@ app.use(cors({
   credentials: true
 }));
 
-// configure the redis client
-app.use(session({
-    store: new RedisStore({ client: redisClient }),
-    name: 'sid',
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
-    }
-}))
-
-// get routes
-const eventsRouter = require('./src/routes/events');
-const orgsRouter = require('./src/routes/organizations');
-const usersRouter = require('./src/routes/users');
-const authRouter = require('./src/routes/auth');
-const { errorHandler } = require("./src/middleware/errorHandler");
-
-// HOME
-app.get('/', (req, res) => {
-    res.send("Home route")
-});
-
-// API Routes
-app.use('/', authRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/orgs', orgsRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/auth', authRouter);
-app.use(errorHandler);
-
-
 // enable foreign keys for all sqlite sessions
 sequelize.addHook("afterConnect", async (connection) => {
     await new Promise((resolve, reject) => {
@@ -72,12 +37,62 @@ sequelize.addHook("afterConnect", async (connection) => {
     });
 });
 
-// Start server
-sequelize.authenticate().then(() => {
+async function start() {
+    // Redis is required in production. In development, fall back to
+    // express-session's built-in in-memory store when nothing is running
+    // locally, so auth still works without a Redis/Memurai install.
+    let store;
+    try {
+        await redisClient.connect();
+        store = new RedisStore({ client: redisClient });
+        console.log('Sessions: using Redis.');
+    } catch (err) {
+        if (IS_PROD) throw err;
+        console.warn(`Sessions: Redis unavailable (${err.message}). Falling back to an in-memory store — sessions will reset on restart. Fine for local dev, not for production.`);
+    }
+
+    app.use(session({
+        store,
+        name: 'sid',
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: IS_PROD,
+            maxAge: 1000 * 60 * 60 * 24, // 1 day
+        }
+    }));
+
+    // get routes
+    const eventsRouter = require('./src/routes/events');
+    const orgsRouter = require('./src/routes/organizations');
+    const usersRouter = require('./src/routes/users');
+    const authRouter = require('./src/routes/auth');
+    const { errorHandler } = require("./src/middleware/errorHandler");
+
+    // HOME
+    app.get('/', (req, res) => {
+        res.send("Home route")
+    });
+
+    // API Routes
+    app.use('/', authRouter);
+    app.use('/api/events', eventsRouter);
+    app.use('/api/orgs', orgsRouter);
+    app.use('/api/users', usersRouter);
+    app.use('/api/auth', authRouter);
+    app.use(errorHandler);
+
+    await sequelize.authenticate();
     console.log('Database connected.');
     app.listen(BE_PORT, () => {
         console.log(`Server is running on ${DOMAIN}:${BE_PORT}`);
     });
-}).catch(err => {
-    console.error('Unable to connect to the database:', err);
+}
+
+start().catch(err => {
+    console.error('Unable to start server:', err);
+    process.exit(1);
 });

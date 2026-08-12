@@ -79,7 +79,7 @@ export default function Header() {
             {isOrg
               ? <DropLink to={`/organizations/${orgId}`}>Your organization</DropLink>
               : <DropLink to="/signup?role=organization">Register your organization</DropLink>}
-            <DropLink to={isOrg ? `/organizations/${orgId}` : '/login?role=organization'}>
+            <DropLink to={isOrg ? `/organizations/${orgId}/events/new` : '/login?role=organization'}>
               Post a volunteer event
             </DropLink>
             <DropLink to="/organizations">Browse organizations</DropLink>

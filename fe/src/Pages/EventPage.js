@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import '../styles/EventPage.css';
 
+import { useAuth } from '../context/AuthContext';
+import { updateEvent, joinEvent, leaveEvent, describeApiError } from '../data/api';
 import Header from '../Components/Header';
 import Footer from '../Components/Footer';
 import Breadcrumb from '../Components/Breadcrumb';
@@ -387,7 +389,9 @@ function EventPage() {
   const [allTags,     setAllTags]     = useState([]);
   const [tagsLoading, setTagsLoading] = useState(true);
   const [tagsError,   setTagsError]   = useState(false);
+  const [saving,    setSaving]    = useState(false);
   const toastTimer = useRef(null);
+  const { auth, isOrg } = useAuth();
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/events/tags`)
@@ -427,17 +431,37 @@ function EventPage() {
   const set = key => val => setDraft(d => ({ ...d, [key]: val }));
   const setLocation = (address, lat, lng) => setDraft(d => ({ ...d, address, lat, lng }));
 
+  /* Only the organization that owns this event may edit it. The API enforces
+     this as well; hiding the control just avoids offering a guaranteed 403. */
+  const canEdit = isOrg && auth?.user?.id != null && event?.organizationId != null
+    && String(auth.user.id) === String(event.organizationId);
+
   const startEdit  = () => { setDraft({ ...event }); setEditing(true); };
   const cancelEdit = () => setEditing(false);
-  const saveEdit   = () => {
-    setEvent({ ...draft, updatedAt: new Date().toISOString() });
-    setEditing(false);
-    showToast('Event saved.');
+  const saveEdit   = async () => {
+    setSaving(true);
+    try {
+      const saved = await updateEvent(id, draft);
+      setEvent(saved);
+      setDraft(saved);
+      setEditing(false);
+      showToast('Event saved.');
+    } catch (err) {
+      showToast(describeApiError(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleRsvp = () => {
-    setRsvped(r => !r);
-    showToast(rsvped ? 'RSVP cancelled.' : "You're signed up!");
+  const handleRsvp = async () => {
+    if (!auth) { showToast('Log in as a volunteer to sign up for events.'); return; }
+    if (isOrg)  { showToast('Organization accounts cannot sign up for events.'); return; }
+    try {
+      if (rsvped) { await leaveEvent(id); setRsvped(false); showToast('RSVP cancelled.'); }
+      else        { await joinEvent(id);  setRsvped(true);  showToast("You're signed up!"); }
+    } catch (err) {
+      showToast(describeApiError(err));
+    }
   };
 
   if (loading) return (
@@ -474,8 +498,8 @@ function EventPage() {
             <button className="evt-btn evt-btn--sm evt-btn--danger" onClick={cancelEdit}>
               <IconX /> Discard
             </button>
-            <button className="evt-btn evt-btn--sm" onClick={saveEdit}>
-              <IconCheck /> Save Changes
+            <button className="evt-btn evt-btn--sm" onClick={saveEdit} disabled={saving}>
+              <IconCheck /> {saving ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>
@@ -510,7 +534,7 @@ function EventPage() {
                   {editing ? (draft.title || 'Untitled event') : event.title}
                 </h1>
               </div>
-              {!editing && (
+              {!editing && canEdit && (
                 <button className="evt-btn-hero-edit" onClick={startEdit}>
                   <IconEdit size={14} /> Edit
                 </button>

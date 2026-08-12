@@ -13,7 +13,7 @@ const BY_DESIGN = { classic, meridian, vesper };
 
 /** Route key -> exported component name. Both designs export all of these. */
 export const SURFACES = [
-  'Landing', 'Events', 'Event', 'Orgs', 'Org',
+  'Landing', 'Events', 'Event', 'EventNew', 'Orgs', 'Org',
   'Volunteer', 'Login', 'Signup', 'About', 'NotFound',
 ];
 

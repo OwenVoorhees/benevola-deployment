@@ -9,7 +9,11 @@ import {
   fetchEvent, fetchOrg, fetchUser, fetchOrgs, fetchTags,
   fetchOrgEvents, fetchUserEvents, fetchOrgName,
   searchEvents, geocode,
+  updateEvent, updateOrg, updateUser,
+  fetchEventAttendees, joinEvent, leaveEvent,
+  describeApiError,
 } from './api';
+import { useAuth } from '../context/AuthContext';
 
 /* ── Toast ───────────────────────────────────────────────────────── */
 export function useToast(duration = 2400) {
@@ -232,18 +236,21 @@ export function useEventsSearch() {
 
 /* ── Editable record (event / org / user share this shape) ───────── */
 
-function useEditableRecord(id, loader) {
-  const [record,  setRecord]  = useState(null);
-  const [draft,   setDraft]   = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(false);
+function useEditableRecord(id, loader, saver) {
+  const [record,    setRecord]    = useState(null);
+  const [draft,     setDraft]     = useState(null);
+  const [editing,   setEditing]   = useState(false);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(false);
     setEditing(false);
+    setSaveError('');
     loader(id)
       .then(data => {
         if (!alive) return;
@@ -258,23 +265,45 @@ function useEditableRecord(id, loader) {
   const setValue = useCallback((key, value) => setDraft(d => ({ ...d, [key]: value })), []);
   const patch    = useCallback(values => setDraft(d => ({ ...d, ...values })), []);
 
-  const startEdit = () => { setDraft({ ...record }); setEditing(true); };
-  const cancel    = () => { setDraft({ ...record }); setEditing(false); };
-  const save      = () => {
-    const saved = { ...draft, updatedAt: new Date().toISOString() };
-    setRecord(saved);
-    setDraft(saved);
-    setEditing(false);
-  };
+  const startEdit = () => { setDraft({ ...record }); setEditing(true); setSaveError(''); };
+  const cancel    = () => { setDraft({ ...record }); setEditing(false); setSaveError(''); };
 
-  return { record, draft, editing, loading, error, setValue, patch, startEdit, cancel, save, setRecord };
+  /* Persist to the API and adopt whatever the server says the record now is.
+     Resolves true on success so callers can decide whether to toast/navigate. */
+  const save = useCallback(async () => {
+    if (!saver) return false;
+    setSaving(true);
+    setSaveError('');
+    try {
+      const saved = await saver(id, draft);
+      setRecord(saved);
+      setDraft(saved);
+      setEditing(false);
+      return true;
+    } catch (err) {
+      setSaveError(describeApiError(err));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [id, draft, saver]);
+
+  return {
+    record, draft, editing, loading, error, saving, saveError,
+    setValue, patch, startEdit, cancel, save, setRecord, setSaveError,
+  };
 }
+
+/* Ids arrive from the URL as strings but come back from the API as numbers. */
+const sameId = (a, b) => a != null && b != null && String(a) === String(b);
 
 /* ── Single event ────────────────────────────────────────────────── */
 export function useEventDetail(id) {
-  const base = useEditableRecord(id, fetchEvent);
+  const base = useEditableRecord(id, fetchEvent, updateEvent);
+  const { auth, isOrg, isVolunteer, userId } = useAuth();
   const [orgName, setOrgName] = useState(null);
   const [rsvped,  setRsvped]  = useState(false);
+  const [rsvpBusy, setRsvpBusy] = useState(false);
   const toast = useToast();
 
   const orgId = base.record?.organizationId;
@@ -285,21 +314,54 @@ export function useEventDetail(id) {
     return () => { alive = false; };
   }, [orgId]);
 
-  useEffect(() => { setRsvped(false); }, [id]);
+  /* Only the organization that owns this event may edit it — the API enforces
+     this too, this just keeps the affordance from showing when it would 403. */
+  const canEdit = isOrg && sameId(userId, orgId);
 
-  const toggleRsvp = () => {
-    toast.show(rsvped ? 'RSVP cancelled.' : "You're signed up. Details are in your profile.");
-    setRsvped(r => !r);
+  /* Reflect real attendance rather than assuming: ask who is signed up. */
+  useEffect(() => {
+    if (!isVolunteer || userId == null) { setRsvped(false); return; }
+    let alive = true;
+    fetchEventAttendees(id)
+      .then(list => { if (alive) setRsvped(list.some(u => sameId(u.id, userId))); })
+      .catch(() => { if (alive) setRsvped(false); });
+    return () => { alive = false; };
+  }, [id, isVolunteer, userId]);
+
+  const toggleRsvp = async () => {
+    if (!auth) { toast.show('Log in as a volunteer to sign up for events.'); return; }
+    if (isOrg)  { toast.show('Organization accounts cannot sign up for events.'); return; }
+    setRsvpBusy(true);
+    try {
+      if (rsvped) {
+        await leaveEvent(id);
+        setRsvped(false);
+        toast.show('RSVP cancelled.');
+      } else {
+        await joinEvent(id);
+        setRsvped(true);
+        toast.show("You're signed up. Details are in your profile.");
+      }
+    } catch (err) {
+      toast.show(describeApiError(err));
+    } finally {
+      setRsvpBusy(false);
+    }
   };
 
-  const save = () => { base.save(); toast.show('Event saved.'); };
+  const save = async () => {
+    const ok = await base.save();
+    if (ok) toast.show('Event saved.');
+    return ok;
+  };
 
-  return { ...base, save, orgName, rsvped, toggleRsvp, toast };
+  return { ...base, save, canEdit, orgName, rsvped, rsvpBusy, toggleRsvp, toast };
 }
 
 /* ── Single organization + its events ────────────────────────────── */
 export function useOrgDetail(id) {
-  const base  = useEditableRecord(id, fetchOrg);
+  const base  = useEditableRecord(id, fetchOrg, updateOrg);
+  const { isOrg, userId } = useAuth();
   const toast = useToast();
   const [events,        setEvents]        = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -314,14 +376,22 @@ export function useOrgDetail(id) {
     return () => { alive = false; };
   }, [id]);
 
-  const save = () => { base.save(); toast.show('Organization saved.'); };
+  /* You may only edit the organization you are signed in as. */
+  const canEdit = isOrg && sameId(userId, id);
 
-  return { ...base, save, events, eventsLoading, toast };
+  const save = async () => {
+    const ok = await base.save();
+    if (ok) toast.show('Organization saved.');
+    return ok;
+  };
+
+  return { ...base, save, canEdit, events, eventsLoading, toast };
 }
 
 /* ── Single volunteer + their events ─────────────────────────────── */
 export function useUserDetail(id) {
-  const base  = useEditableRecord(id, fetchUser);
+  const base  = useEditableRecord(id, fetchUser, updateUser);
+  const { isVolunteer, userId } = useAuth();
   const toast = useToast();
   const [events,        setEvents]        = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -336,9 +406,16 @@ export function useUserDetail(id) {
     return () => { alive = false; };
   }, [id]);
 
-  const save = () => { base.save(); toast.show('Profile saved.'); };
+  /* You may only edit your own profile. */
+  const canEdit = isVolunteer && sameId(userId, id);
 
-  return { ...base, save, events, eventsLoading, toast };
+  const save = async () => {
+    const ok = await base.save();
+    if (ok) toast.show('Profile saved.');
+    return ok;
+  };
+
+  return { ...base, save, canEdit, events, eventsLoading, toast };
 }
 
 /* ── Organization directory ──────────────────────────────────────── */

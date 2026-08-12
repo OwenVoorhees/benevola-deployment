@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ScrollToTop from './Components/ScrollToTop';
+import RequireAuth from './Components/RequireAuth';
 import { AuthProvider } from './context/AuthContext';
 import { DesignProvider } from './design/DesignContext';
 import DesignSwitcher from './design/DesignSwitcher';
@@ -24,6 +25,14 @@ function App() {
             <Route path="/events/:id"        element={<Surface name="Event" />} />
             <Route path="/organizations"     element={<Surface name="Orgs" />} />
             <Route path="/organizations/:id" element={<Surface name="Org" />} />
+            <Route
+              path="/organizations/:id/events/new"
+              element={
+                <RequireAuth role="organization">
+                  <Surface name="EventNew" />
+                </RequireAuth>
+              }
+            />
             <Route path="/volunteer/:id"     element={<Surface name="Volunteer" />} />
             <Route path="*"                  element={<Surface name="NotFound" />} />
           </Routes>

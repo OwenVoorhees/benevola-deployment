@@ -98,10 +98,17 @@ export default function Event() {
     <Shell>
       {editing && (
         <div className="mrd-edit-bar">
-          <Mono><span className="mrd-edit-dot" />Editing event · unsaved</Mono>
+          <Mono>
+            <span className="mrd-edit-dot" />
+            {e.saveError ? e.saveError : 'Editing event · unsaved'}
+          </Mono>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Btn sm variant="ghost" onClick={e.cancel}><IconX size={13} /> Discard</Btn>
-            <Btn sm onClick={e.save}><IconCheck size={13} /> Save changes</Btn>
+            <Btn sm variant="ghost" onClick={e.cancel} disabled={e.saving}>
+              <IconX size={13} /> Discard
+            </Btn>
+            <Btn sm onClick={e.save} disabled={e.saving}>
+              <IconCheck size={13} /> {e.saving ? 'Saving…' : 'Save changes'}
+            </Btn>
           </div>
         </div>
       )}
@@ -121,7 +128,8 @@ export default function Event() {
             </Link>
             <h1 className="mrd-h1">{title}</h1>
           </div>
-          {!editing && (
+          {/* Only the organization that owns this event may edit it. */}
+          {!editing && e.canEdit && (
             <Btn sm variant="ghost" onClick={e.startEdit}><IconEdit size={13} /> Edit</Btn>
           )}
         </div>

@@ -11,6 +11,8 @@ import {
   IconPin, IconMail, IconPhone, IconCalendar,
   IconClock, IconUsers,
 } from '../Components/Icons';
+import { useAuth } from '../context/AuthContext';
+import { updateOrg, describeApiError } from '../data/api';
 import '../styles/OrgPage.css';
 
 const PIN_ICON = L.divIcon({
@@ -169,7 +171,9 @@ function OrgPage() {
   const [toastShow,     setToastShow]     = useState(false);
   const [events,        setEvents]        = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [saving,        setSaving]        = useState(false);
   const toastTimer = useRef(null);
+  const { auth, isOrg } = useAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -214,12 +218,25 @@ function OrgPage() {
 
   const set = key => val => setDraft(d => ({ ...d, [key]: val }));
 
+  /* You may only edit the organization you are signed in as. The API enforces
+     this as well; hiding the control just avoids offering a guaranteed 403. */
+  const canEdit = isOrg && auth?.user?.id != null && String(auth.user.id) === String(id);
+
   const startEdit  = () => { setDraft({ ...org }); setEditing(true); };
   const cancelEdit = () => setEditing(false);
-  const saveEdit   = () => {
-    setOrg({ ...draft, updatedAt: new Date().toISOString() });
-    setEditing(false);
-    showToast('Organization saved.');
+  const saveEdit   = async () => {
+    setSaving(true);
+    try {
+      const saved = await updateOrg(id, draft);
+      setOrg(saved);
+      setDraft(saved);
+      setEditing(false);
+      showToast('Organization saved.');
+    } catch (err) {
+      showToast(describeApiError(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -259,10 +276,10 @@ function OrgPage() {
             Editing organization
           </div>
           <div className="org-edit-banner-actions">
-            <button className="org-btn org-btn--sm org-btn--danger" onClick={cancelEdit}>
+            <button className="org-btn org-btn--sm org-btn--danger" onClick={cancelEdit} disabled={saving}>
               <IconX /> Discard
             </button>
-            <button className="org-btn org-btn--sm" onClick={saveEdit}>
+            <button className="org-btn org-btn--sm" onClick={saveEdit} disabled={saving}>
               <IconCheck /> Save Changes
             </button>
           </div>
@@ -315,11 +332,11 @@ function OrgPage() {
             </div>
           </div>
 
-          {!editing && (
+          {!editing && canEdit && (
             <div className="org-profile-actions">
-              <button className="org-btn org-btn--sm" onClick={() => {}}>
+              <Link className="org-btn org-btn--sm" to={`/organizations/${org.id}/events/new`}>
                 <IconCalendar size={14} /> Create Event
-              </button>
+              </Link>
               <button className="org-btn org-btn--ghost org-btn--sm" onClick={startEdit}>
                 <IconEdit /> Edit
               </button>

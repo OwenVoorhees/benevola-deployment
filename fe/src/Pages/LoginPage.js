@@ -46,7 +46,7 @@ function Field({ label, required, error, children }) {
 }
 
 function LoginPage() {
-  const { login }           = useAuth();
+  const { refresh }         = useAuth();
   const navigate            = useNavigate();
   const [role, setRole]     = useState('volunteer');
   const [form, setForm]     = useState({ identifier: '', password: '' });
@@ -78,11 +78,18 @@ function LoginPage() {
       ? `${process.env.REACT_APP_API_URL}/api/auth/login/org`
       : `${process.env.REACT_APP_API_URL}/api/auth/login/user`;
 
+    /* Orgs only ever sign in by email; volunteers may type either. */
+    const identifier = form.identifier.trim();
+    const credentialField = (role !== 'organization' && !identifier.includes('@'))
+      ? { username: identifier }
+      : { email: identifier };
+
     try {
       const res  = await fetch(url, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: form.identifier, password: form.password }),
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ ...credentialField, password: form.password }),
       });
       const data = await res.json();
 
@@ -92,18 +99,17 @@ function LoginPage() {
         return;
       }
 
-      let userData = data.user ?? data.org ?? data;
+      /* The session cookie is what actually signs you in, so read the account
+         back from the server: it confirms the cookie stuck and returns the full
+         record (the login response only echoes a summary). */
+      const me = await refresh().catch(() => null);
 
-      /* For orgs, fetch /api/auth/me to get the organization ID */
-      if (role === 'organization') {
-        try {
-          const meRes  = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`);
-          const meData = await meRes.json();
-          userData = { ...userData, ...(meData.user ?? meData.org ?? meData) };
-        } catch { /* non-fatal — org link just won't work */ }
+      if (!me) {
+        setApiError('Signed in, but your browser did not keep the session. Check that cookies are enabled for this site.');
+        setLoading(false);
+        return;
       }
 
-      login(role, userData);
       navigate('/');
     } catch {
       setApiError('Could not reach the server. Check your connection.');

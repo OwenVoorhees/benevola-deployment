@@ -35,5 +35,9 @@
     "nodemon": "^3.1.11",
     "rimraf": "^6.1.2",
     "sequelize-cli": "^6.6.5"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true,
+    "sqlite3@5.1.7": true
   }
 }

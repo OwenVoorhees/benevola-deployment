@@ -10,6 +10,8 @@ import {
   IconEdit, IconCheck, IconX, IconMail, IconUser, IconCalendar,
   IconClock, IconUsers, IconPin,
 } from '../Components/Icons';
+import { useAuth } from '../context/AuthContext';
+import { updateUser, describeApiError } from '../data/api';
 import '../styles/VolunteerPage.css';
 
 const PIN_ICON = L.divIcon({
@@ -165,7 +167,9 @@ function VolunteerPage() {
   const [toastShow,     setToastShow]     = useState(false);
   const [events,        setEvents]        = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [saving,        setSaving]        = useState(false);
   const toastTimer = useRef(null);
+  const { auth, isVolunteer } = useAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -211,12 +215,25 @@ function VolunteerPage() {
 
   const set = key => val => setDraft(d => ({ ...d, [key]: val }));
 
+  /* You may only edit your own profile. The API enforces this as well; hiding
+     the control just avoids offering a guaranteed 403. */
+  const canEdit = isVolunteer && auth?.user?.id != null && String(auth.user.id) === String(id);
+
   const startEdit  = () => { setDraft({ ...user }); setEditing(true); };
   const cancelEdit = () => setEditing(false);
-  const saveEdit   = () => {
-    setUser({ ...draft, updatedAt: new Date().toISOString() });
-    setEditing(false);
-    showToast('Profile saved.');
+  const saveEdit   = async () => {
+    setSaving(true);
+    try {
+      const saved = await updateUser(id, draft);
+      setUser(saved);
+      setDraft(saved);
+      setEditing(false);
+      showToast('Profile saved.');
+    } catch (err) {
+      showToast(describeApiError(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return (
@@ -254,8 +271,8 @@ function VolunteerPage() {
             <button className="vol-btn vol-btn--sm vol-btn--danger" onClick={cancelEdit}>
               <IconX /> Discard
             </button>
-            <button className="vol-btn vol-btn--sm" onClick={saveEdit}>
-              <IconCheck /> Save Changes
+            <button className="vol-btn vol-btn--sm" onClick={saveEdit} disabled={saving}>
+              <IconCheck /> {saving ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>
@@ -297,7 +314,7 @@ function VolunteerPage() {
             </div>
           </div>
 
-          {!editing && (
+          {!editing && canEdit && (
             <button className="vol-btn vol-btn--ghost vol-btn--sm" onClick={startEdit}>
               <IconEdit /> Edit
             </button>

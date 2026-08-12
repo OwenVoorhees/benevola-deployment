@@ -83,7 +83,7 @@ function AuthFrame({ eyebrow, title, points, children }) {
 
 /* ── Log in ─────────────────────────────────────────────────────────── */
 export function Login() {
-  const { login } = useAuth();
+  const { refresh } = useAuth();
   const navigate  = useNavigate();
   const [role,   setRole]   = useState('volunteer');
   const [form,   setForm]   = useState({ identifier: '', password: '' });
@@ -109,11 +109,18 @@ export function Login() {
       ? `${API}/api/auth/login/org`
       : `${API}/api/auth/login/user`;
 
+    /* Orgs only ever sign in by email; volunteers may type either. */
+    const identifier = form.identifier.trim();
+    const credentialField = (role !== 'organization' && !identifier.includes('@'))
+      ? { username: identifier }
+      : { email: identifier };
+
     try {
       const res  = await fetch(url, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: form.identifier, password: form.password }),
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ ...credentialField, password: form.password }),
       });
       const data = await res.json();
 
@@ -123,17 +130,17 @@ export function Login() {
         return;
       }
 
-      let userData = data.user ?? data.org ?? data;
+      /* The session cookie is what actually signs you in, so read the account
+         back from the server: it confirms the cookie stuck and returns the full
+         record (the login response only echoes a summary). */
+      const me = await refresh().catch(() => null);
 
-      if (role === 'organization') {
-        try {
-          const meRes  = await fetch(`${API}/api/auth/me`);
-          const meData = await meRes.json();
-          userData = { ...userData, ...(meData.user ?? meData.org ?? meData) };
-        } catch { /* non-fatal — the org link just will not resolve */ }
+      if (!me) {
+        setApiError('Signed in, but your browser did not keep the session. Check that cookies are enabled for this site.');
+        setLoading(false);
+        return;
       }
 
-      login(role, userData);
       navigate('/');
     } catch {
       setApiError('Could not reach the server. Check your connection.');
@@ -193,7 +200,7 @@ export function Login() {
 
 /* ── Sign up ────────────────────────────────────────────────────────── */
 export function Signup() {
-  const { login } = useAuth();
+  const { refresh } = useAuth();
   const navigate  = useNavigate();
   const [params]  = useSearchParams();
 
@@ -228,9 +235,10 @@ export function Signup() {
 
     try {
       const res  = await fetch(url, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({
           username: form.username,
           email:    form.email,
           password: form.password,
@@ -247,7 +255,17 @@ export function Signup() {
         return;
       }
 
-      login(role, data.user ?? data.org ?? data);
+      /* Registration signs you in via a session cookie — read the account back
+         from the server so we store the real record, and so a cookie that never
+         stuck is caught here instead of looking signed in but acting logged out. */
+      const me = await refresh().catch(() => null);
+
+      if (!me) {
+        setApiError('Account created, but your browser did not keep the session. Check that cookies are enabled, then log in.');
+        setLoading(false);
+        return;
+      }
+
       navigate('/');
     } catch {
       setApiError('Could not reach the server. Check your connection.');

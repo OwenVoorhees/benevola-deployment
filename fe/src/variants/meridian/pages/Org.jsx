@@ -79,10 +79,17 @@ export default function Org() {
     <Shell>
       {editing && (
         <div className="mrd-edit-bar">
-          <Mono><span className="mrd-edit-dot" />Editing organization · unsaved</Mono>
+          <Mono>
+            <span className="mrd-edit-dot" />
+            {o.saveError ? o.saveError : 'Editing organization · unsaved'}
+          </Mono>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Btn sm variant="ghost" onClick={o.cancel}><IconX size={13} /> Discard</Btn>
-            <Btn sm onClick={o.save}><IconCheck size={13} /> Save changes</Btn>
+            <Btn sm variant="ghost" onClick={o.cancel} disabled={o.saving}>
+              <IconX size={13} /> Discard
+            </Btn>
+            <Btn sm onClick={o.save} disabled={o.saving}>
+              <IconCheck size={13} /> {o.saving ? 'Saving…' : 'Save changes'}
+            </Btn>
           </div>
         </div>
       )}
@@ -128,9 +135,12 @@ export default function Org() {
             </Mono>
           </div>
 
-          {!editing && (
+          {/* Only the signed-in owner gets these — the API rejects anyone else. */}
+          {!editing && o.canEdit && (
             <div className="mrd-profile-actions">
-              <Btn sm><IconCalendar size={13} /> Create event</Btn>
+              <Link to={`/organizations/${org.id}/events/new`}>
+                <Btn sm><IconCalendar size={13} /> Create event</Btn>
+              </Link>
               <Btn sm variant="ghost" onClick={o.startEdit}><IconEdit size={13} /> Edit</Btn>
             </div>
           )}

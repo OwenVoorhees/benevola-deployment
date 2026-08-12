@@ -89,10 +89,17 @@ export default function Volunteer() {
     <Shell>
       {editing && (
         <div className="mrd-edit-bar">
-          <Mono><span className="mrd-edit-dot" />Editing profile · unsaved</Mono>
+          <Mono>
+            <span className="mrd-edit-dot" />
+            {u.saveError ? u.saveError : 'Editing profile · unsaved'}
+          </Mono>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Btn sm variant="ghost" onClick={u.cancel}><IconX size={13} /> Discard</Btn>
-            <Btn sm onClick={u.save}><IconCheck size={13} /> Save changes</Btn>
+            <Btn sm variant="ghost" onClick={u.cancel} disabled={u.saving}>
+              <IconX size={13} /> Discard
+            </Btn>
+            <Btn sm onClick={u.save} disabled={u.saving}>
+              <IconCheck size={13} /> {u.saving ? 'Saving…' : 'Save changes'}
+            </Btn>
           </div>
         </div>
       )}
@@ -132,7 +139,8 @@ export default function Volunteer() {
             </Mono>
           </div>
 
-          {!editing && (
+          {/* Your own profile only — the API rejects edits to anyone else's. */}
+          {!editing && u.canEdit && (
             <div className="mrd-profile-actions">
               <Btn sm variant="ghost" onClick={u.startEdit}><IconEdit size={13} /> Edit profile</Btn>
             </div>
