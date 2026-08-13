@@ -18,7 +18,7 @@ const parseTags = require("../middleware/parseTags")
 const { searchEvents, indexEvent, removeEvent } = require('../services/searchService');
 const { getEvents } = require("../services/buildEventQuery");
 const authenticate = require("../middleware/authenticate");
-const { requireUser, requireOrg, verifyOwnership } = require("../middleware/authorization");
+const { requireUser, requireOrg, requireAdmin, verifyOwnership } = require("../middleware/authorization");
 
 // GET events
 router.get('/',
@@ -73,7 +73,11 @@ router.get('/tags', async (req, res, next) => {
 });
 
 // ADD a tag
+// Tags are a shared vocabulary used across every organization's events, so
+// they are not something any single account gets to edit.
 router.post('/tags',
+    authenticate,
+    requireAdmin,
     validate({ body: createTagValidation }),
     async (req, res, next) => {
         try {
@@ -90,7 +94,11 @@ router.post('/tags',
 );
 
 // DELETE tag by slug
+// Deleting a tag detaches it from every event already using it, which is
+// exactly why this cannot be left open.
 router.delete('/tags/:slug',
+    authenticate,
+    requireAdmin,
     validate({ params: tagSlugValidation }),
     load(Tag, {
         identifier: "slug",

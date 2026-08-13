@@ -32,6 +32,27 @@ ORGANIZATIONS  (log in with the email; organizations have no username)
     Boston, MA  ·  1 event       (After-School Reading Buddies)
 
 
+ADMINISTRATOR
+===============================================================================
+
+  Site Admin         site_admin       admin@benevola.test
+
+  Admins are volunteer accounts carrying role = 'admin'. They can:
+    - create and delete tags (the shared cause vocabulary)
+    - list every user account
+    - edit, delete and moderate ANY organization's events and profile
+    - close any account
+
+  There is no way to become an admin over HTTP. The profile endpoint refuses
+  to change `role`, so promotion happens from the api/ directory:
+
+      npm run admin:list
+      npm run admin:grant  -- jane@example.com
+      npm run admin:revoke -- jane@example.com
+
+  Organizations can never be administrators, only volunteer accounts.
+
+
 VOLUNTEERS  (log in with EITHER the email or the username)
 ===============================================================================
 

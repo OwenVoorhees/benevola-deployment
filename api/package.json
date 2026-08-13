@@ -26,7 +26,10 @@
     "db:migrate": "sequelize-cli db:migrate --env development",
     "db:migrate:prod": "sequelize-cli db:migrate --env production",
     "db:seed": "sequelize-cli db:seed:all --env development",
-    "db:fresh": "rimraf data/dev.sqlite && cross-env NODE_ENV=development sequelize-cli db:migrate && cross-env NODE_ENV=development sequelize-cli db:seed:all"
+    "db:fresh": "rimraf data/dev.sqlite && cross-env NODE_ENV=development sequelize-cli db:migrate && cross-env NODE_ENV=development sequelize-cli db:seed:all",
+    "admin:grant": "node scripts/make-admin.js grant",
+    "admin:revoke": "node scripts/make-admin.js revoke",
+    "admin:list": "node scripts/make-admin.js list"
   },
   "keywords": [],
   "author": "",
