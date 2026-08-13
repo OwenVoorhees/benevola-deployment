@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Shell, { Btn, Chip, State, Skeleton } from '../parts';
 import { useEventsSearch } from '../../../data/hooks';
-import { formatDate, formatDuration, shortAddress } from '../../../data/format';
+import { formatDuration, shortAddress } from '../../../data/format';
 
 /* The landing page answers one question: is there anything near me worth
    doing? So it shows real openings straight away rather than a marketing

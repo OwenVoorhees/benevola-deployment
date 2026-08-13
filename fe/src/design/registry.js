@@ -3,6 +3,10 @@
    Every design folder exports the same set of named surfaces. To drop a
    design, delete its folder and remove its two lines here. */
 
+/* `default` is a reserved word, so the 00 variant needs an alias here even
+   though its id, folder and deep link are all plain "default". */
+import * as defaultDesign from '../variants/default';
+import * as prototype from '../variants/prototype';
 import * as classic  from '../variants/classic';
 import * as vesper   from '../variants/vesper';
 import * as atlas    from '../variants/atlas';
@@ -18,7 +22,14 @@ import EventNew       from '../shared/EventNewPage';
 import ForgotPassword from '../shared/ForgotPasswordPage';
 import ResetPassword  from '../shared/ResetPasswordPage';
 
-const BY_DESIGN = { classic, vesper, atlas, dispatch };
+const BY_DESIGN = {
+  default: defaultDesign,
+  prototype,
+  vesper,
+  classic,
+  atlas,
+  dispatch,
+};
 
 const SHARED = { EventNew, ForgotPassword, ResetPassword };
 

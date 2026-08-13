@@ -1,8 +1,7 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Shell, {
-  Avatar, Block, BlockHead, Btn, Crumbs, Field, Input, Area, Kicker, Meta,
-  State, Skeleton, Tally, TagChip, Toast,
+  Avatar, Btn, Chip, Crumbs, Field, Input, Area, Meter, Panel, State, Skeleton, Toast,
 } from '../parts';
 import DangerZone from '../../../Components/DangerZone';
 import { useEventDetail, useTags } from '../../../data/hooks';
@@ -20,14 +19,14 @@ export default function Event() {
   };
 
   if (e.loading) {
-    return <Shell><div className="dsp-shell"><Skeleton rows={5} /></div></Shell>;
+    return <Shell><div className="ptp-shell"><Skeleton rows={5} /></div></Shell>;
   }
 
   if (e.error || !e.record) {
     return (
       <Shell>
-        <div className="dsp-shell">
-          <State error title="Could not load this notice">
+        <div className="ptp-shell">
+          <State error title="Could not load this event">
             Check the link, or try again once the API is back.
           </State>
         </div>
@@ -39,52 +38,55 @@ export default function Event() {
   const draft   = e.draft;
   const editing = e.editing;
   const known   = event.spotsLeft != null && event.capacity != null;
-  const taken   = known ? event.capacity - event.spotsLeft : 0;
   const full    = known && event.spotsLeft === 0 && !e.rsvped;
 
   return (
     <Shell>
       {editing && (
-        <div className="dsp-editbar">
-          <span>{e.saveError || 'Editing · not saved'}</span>
-          <div style={{ display: 'flex', gap: 8 }}>
+        <div className="ptp-editbar">
+          <span>{e.saveError || 'Editing this event. Changes are not saved yet.'}</span>
+          <div className="ptp-editbar-actions">
             <Btn sm variant="ghost" onClick={e.cancel} disabled={e.saving}>Discard</Btn>
-            <Btn sm variant="ghost" onClick={e.save} disabled={e.saving}>
-              {e.saving ? 'Saving' : 'Save'}
-            </Btn>
+            <Btn sm onClick={e.save} disabled={e.saving}>{e.saving ? 'Saving…' : 'Save changes'}</Btn>
           </div>
         </div>
       )}
 
-      <div className="dsp-shell">
+      <div className="ptp-shell">
         <Crumbs items={[
           { label: 'Home', to: '/' },
           { label: 'Openings', to: '/events' },
           { label: editing ? (draft.title || 'Untitled') : event.title },
         ]} />
 
-        <div className="dsp-head">
+        <div className="ptp-head">
           <div style={{ minWidth: 0 }}>
-            <Link to={`/organizations/${event.organizationId}`} style={{ textDecoration: 'none' }}>
-              <Kicker>{e.orgName ?? `Organization ${event.organizationId}`}</Kicker>
+            <Link className="ptp-eyebrow" to={`/organizations/${event.organizationId}`}>
+              {e.orgName ?? `Organization ${event.organizationId}`}
             </Link>
             {editing ? (
-              <Input value={draft.title ?? ''} onChange={ev => e.setValue('title', ev.target.value)} placeholder="Event title" />
+              <Input
+                value={draft.title ?? ''}
+                onChange={ev => e.setValue('title', ev.target.value)}
+                placeholder="Event title"
+              />
             ) : (
-              <h1 className="dsp-h1">{event.title}</h1>
+              <h1 className="ptp-h1">{event.title}</h1>
             )}
           </div>
-          {!editing && e.canEdit && <Btn sm variant="ghost" onClick={e.startEdit}>Edit</Btn>}
+          {!editing && e.canEdit && (
+            <Btn sm variant="ghost" onClick={e.startEdit}>Edit event</Btn>
+          )}
         </div>
 
-        <div className="dsp-cols">
+        <div className="ptp-cols">
           <div>
             {editing ? (
               <>
                 <Field label="Description">
                   <Area rows={7} value={draft.description ?? ''} onChange={ev => e.setValue('description', ev.target.value)} />
                 </Field>
-                <div className="dsp-pair">
+                <div className="ptp-pair">
                   <Field label="Duration (hours)">
                     <Input type="number" min={0.5} step={0.5} value={draft.duration ?? ''} onChange={ev => e.setValue('duration', Number(ev.target.value))} />
                   </Field>
@@ -106,22 +108,27 @@ export default function Event() {
             ) : (
               <>
                 {event.tags.length > 0 && (
-                  <div className="dsp-tagrow" style={{ marginBottom: 20 }}>
-                    {event.tags.map(slug => <TagChip key={slug} tone="stamp">{tags.nameOf(slug)}</TagChip>)}
+                  <div className="ptp-chiprow" style={{ marginBottom: 24 }}>
+                    {event.tags.map(slug => <Chip key={slug} tone="accent">{tags.nameOf(slug)}</Chip>)}
                   </div>
                 )}
 
-                <div className="dsp-prose">
+                <div className="ptp-prose">
                   {(event.description || 'No description was posted for this event.')
                     .split('\n').filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}
                 </div>
 
                 {event.heroImage && (
-                  <img src={event.heroImage} alt="" style={{ width: '100%', marginTop: 22, border: 'var(--dsp-rule) solid var(--dsp-ink)' }} />
+                  <img
+                    src={event.heroImage}
+                    alt=""
+                    style={{ width: '100%', borderRadius: 'var(--ptp-r-lg)', marginTop: 26 }}
+                  />
                 )}
 
-                <div className="dsp-rule" />
-                <Meta>Posted {formatDateTime(event.createdAt)} · Updated {formatDateTime(event.updatedAt)}</Meta>
+                <p className="ptp-muted" style={{ marginTop: 30 }}>
+                  Posted {formatDateTime(event.createdAt)} · Updated {formatDateTime(event.updatedAt)}
+                </p>
 
                 {e.canEdit && (
                   <DangerZone
@@ -141,68 +148,71 @@ export default function Event() {
             )}
           </div>
 
-          <aside className="dsp-aside">
-            <Block>
-              <BlockHead>Details</BlockHead>
-              <div style={{ padding: '4px 14px 14px' }}>
-                <dl style={{ margin: 0 }}>
-                  <div className="dsp-kv"><dt>Date</dt><dd>{event.date ? formatDate(event.date) : 'Not set'}</dd></div>
-                  <div className="dsp-kv"><dt>Starts</dt><dd>{event.date ? formatTime(event.date) : '—'}</dd></div>
-                  <div className="dsp-kv"><dt>Runs</dt><dd>{formatDuration(event.duration)}</dd></div>
-                </dl>
+          <aside className="ptp-aside">
+            <Panel pad float>
+              <dl style={{ margin: 0 }}>
+                <div className="ptp-kv"><dt>Date</dt><dd>{event.date ? formatDate(event.date) : 'Not set'}</dd></div>
+                <div className="ptp-kv"><dt>Starts</dt><dd>{event.date ? formatTime(event.date) : '—'}</dd></div>
+                <div className="ptp-kv"><dt>Duration</dt><dd>{formatDuration(event.duration)}</dd></div>
+                {event.address && <div className="ptp-kv"><dt>Where</dt><dd>{event.address}</dd></div>}
+              </dl>
 
-                <div style={{ marginTop: 14 }}>
-                  <span className="dsp-label">
-                    {known ? `${event.spotsLeft} of ${event.capacity} places left` : 'Places'}
-                  </span>
-                  <Tally taken={taken} capacity={event.capacity} />
-                </div>
-
-                <Btn
-                  block
-                  variant={e.rsvped ? 'ghost' : undefined}
-                  onClick={e.toggleRsvp}
-                  disabled={full || e.rsvpBusy}
-                  style={{ marginTop: 14 }}
-                >
-                  {e.rsvped ? 'Cancel RSVP' : full ? 'Full' : 'Sign on'}
-                </Btn>
-
-                {e.rsvped && (
-                  <p style={{ marginTop: 10, textAlign: 'center' }}><Meta>You are on the roster</Meta></p>
-                )}
+              <div style={{ margin: '20px 0 8px', display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                <span className="ptp-muted">Capacity</span>
+                <span style={{ fontWeight: 640 }}>{known ? `${event.spotsLeft} of ${event.capacity} left` : 'No limit'}</span>
               </div>
-            </Block>
+              <Meter value={event.spotsLeft} max={event.capacity} />
 
-            {/* Roster is the organizer's view; the API serves it to them alone. */}
+              <Btn
+                block
+                variant={e.rsvped ? 'ghost' : undefined}
+                onClick={e.toggleRsvp}
+                disabled={full || e.rsvpBusy}
+                style={{ marginTop: 20 }}
+              >
+                {e.rsvped ? 'Cancel RSVP' : full ? 'Event is full' : 'Sign up'}
+              </Btn>
+
+              {e.rsvped && (
+                <p className="ptp-muted" style={{ marginTop: 12, textAlign: 'center' }}>
+                  You are on the roster.
+                </p>
+              )}
+            </Panel>
+
+            {/* The roster is the organizer's view; the API serves it to them alone. */}
             {e.canEdit && (
-              <Block>
-                <BlockHead right={e.rosterLoading ? '—' : `${e.roster.length}${event.capacity ? `/${event.capacity}` : ''}`}>
-                  Roster
-                </BlockHead>
+              <Panel>
+                <div className="ptp-panel-head">
+                  <h3 className="ptp-h3">Roster</h3>
+                  <span className="ptp-muted">
+                    {e.rosterLoading ? '—' : `${e.roster.length}${event.capacity ? ` / ${event.capacity}` : ''}`}
+                  </span>
+                </div>
                 {e.rosterLoading ? (
-                  <p style={{ padding: 14 }}><Meta>Loading</Meta></p>
+                  <p className="ptp-muted" style={{ padding: 22 }}>Loading the roster…</p>
                 ) : e.roster.length === 0 ? (
-                  <p style={{ padding: 14 }}><Meta>Nobody has signed on yet</Meta></p>
+                  <p className="ptp-muted" style={{ padding: 22 }}>
+                    Nobody has signed on yet. Volunteers appear here as they RSVP.
+                  </p>
                 ) : (
-                  <ul className="dsp-roster">
-                    {e.roster.map((p, i) => (
+                  <ul className="ptp-roster">
+                    {e.roster.map(p => (
                       <li key={p.id}>
                         <Link to={`/volunteer/${p.id}`}>
-                          <span className="dsp-roster-num">{String(i + 1).padStart(2, '0')}</span>
                           <Avatar src={p.profilePic} name={p.displayName || p.username} />
                           <span style={{ minWidth: 0 }}>
-                            <span style={{ display: 'block', fontWeight: 700 }}>
+                            <span style={{ display: 'block', fontWeight: 660 }}>
                               {p.displayName || p.username}
                             </span>
-                            {p.displayName && <Meta>@{p.username}</Meta>}
+                            {p.displayName && <span className="ptp-muted">@{p.username}</span>}
                           </span>
                         </Link>
                       </li>
                     ))}
                   </ul>
                 )}
-              </Block>
+              </Panel>
             )}
           </aside>
         </div>

@@ -6,7 +6,7 @@
    Set LOCKED to a design id below. The switcher disappears and every route
    renders that design, regardless of what is in localStorage or the URL.
 
-       export const LOCKED = 'vesper';
+       export const LOCKED = 'default';
 
    REMOVING A DESIGN FOR GOOD
    --------------------------
@@ -27,40 +27,62 @@
 export const LOCKED = null;
 
 /** Used on first visit, before anyone has picked anything. */
-export const DEFAULT_DESIGN = 'vesper';
+export const DEFAULT_DESIGN = 'default';
 
+/* `tunable: true` means the design builds its palette from the brand colours
+   in src/design/brand.js, so the switcher offers a colour picker while it is
+   active. The four authored looks below it are fixed on purpose: their
+   palettes carry meaning that a swapped hue would destroy. */
 export const DESIGNS = [
   {
-    id:      'classic',
-    name:    'Classic',
+    id:      'default',
+    name:    'Default',
     label:   '00',
-    tagline: 'The original green-and-white build',
+    tagline: 'Open daylight — gradient band, soft cards, your colour',
     theme:   'light',
+    tunable: true,
+  },
+  {
+    id:      'prototype',
+    name:    'Prototype',
+    label:   '01',
+    tagline: 'Night studio — near-black, colour blocks, your colour',
+    theme:   'dark',
+    tunable: true,
   },
   {
     id:      'vesper',
     name:    'Vesper',
-    label:   '01',
+    label:   '02',
     tagline: 'Nocturne — deep petrol, poster serif, clay',
     theme:   'dark',
   },
   {
+    id:      'classic',
+    name:    'Classic',
+    label:   '03',
+    tagline: 'The original green-and-white build',
+    theme:   'light',
+  },
+  {
     id:      'atlas',
     name:    'Atlas',
-    label:   '02',
+    label:   '04',
     tagline: 'Working surface — indigo, lists, daylight',
     theme:   'light',
   },
   {
     id:      'dispatch',
     name:    'Dispatch',
-    label:   '03',
+    label:   '05',
     tagline: 'Public notice — paper, heavy ink, vermilion',
     theme:   'light',
   },
 ];
 
 export const DESIGN_IDS = DESIGNS.map(d => d.id);
+
+export const TUNABLE_IDS = DESIGNS.filter(d => d.tunable).map(d => d.id);
 
 export const STORAGE_KEY = 'benevola_design';
 export const THEME_KEY   = 'theme';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Shell, { Btn, Kicker, Meta, State, Skeleton, Tag_ } from '../parts';
+import Shell, { Btn, Kicker, State, Skeleton, TagChip } from '../parts';
 import { useEventsSearch } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
 
@@ -26,7 +26,7 @@ function Notice({ event, orgName }) {
         </span>
       </span>
       <span className="dsp-tagrow">
-        {event.tags.slice(0, 2).map(t => <Tag_ key={t}>{t.replace(/-/g, ' ')}</Tag_>)}
+        {event.tags.slice(0, 2).map(t => <TagChip key={t}>{t.replace(/-/g, ' ')}</TagChip>)}
       </span>
     </Link>
   );

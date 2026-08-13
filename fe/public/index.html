@@ -3,19 +3,30 @@
   <head>
     <meta charset="utf-8" />
     <script>
-      /* Paint the right ground on the very first frame, before React boots. */
+      /* Paint the right ground on the very first frame, before React boots.
+         Keep this list in sync with DESIGNS in src/design/config.js, and the
+         brand fallbacks with DEFAULT_BRAND in src/design/brand.js. */
       (function() {
         var el = document.documentElement;
-        var designs = ['classic', 'meridian', 'vesper'];
-        var nativeTheme = { classic: 'light', meridian: 'light', vesper: 'dark' };
-        var d;
+        var nativeTheme = {
+          'default': 'light', prototype: 'dark', vesper: 'dark',
+          classic: 'light', atlas: 'light', dispatch: 'light'
+        };
         try {
           var fromUrl = new URLSearchParams(window.location.search).get('design');
-          d = designs.indexOf(fromUrl) > -1 ? fromUrl : localStorage.getItem('benevola_design');
-          if (designs.indexOf(d) === -1) d = 'meridian';
+          var d = nativeTheme[fromUrl] ? fromUrl : localStorage.getItem('benevola_design');
+          if (!nativeTheme[d]) d = 'default';
           el.setAttribute('data-design', d);
+
           var t = localStorage.getItem('theme');
           el.setAttribute('data-theme', t === 'light' || t === 'dark' ? t : nativeTheme[d]);
+
+          /* The two tunable designs build their ground colour out of these, so
+             without them the first frame paints unstyled. */
+          var b = JSON.parse(localStorage.getItem('benevola_brand') || 'null') || {};
+          var hex = /^#[0-9a-fA-F]{6}$/;
+          el.style.setProperty('--brand-primary', hex.test(b.primary) ? b.primary : '#7B53DD');
+          el.style.setProperty('--brand-secondary', hex.test(b.secondary) ? b.secondary : '#19D1D2');
         } catch (e) { /* private mode — defaults are fine */ }
       })();
     </script>
@@ -35,8 +46,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-    <!-- Meridian: Archivo + IBM Plex Mono · Vesper: Fraunces + Public Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400..700;1,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Public+Sans:ital,wght@0,300..800;1,300..700&display=swap" rel="stylesheet">
+    <!-- Vesper: Fraunces + Public Sans · Prototype: Figtree · Dispatch: Archivo + IBM Plex Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400..700;1,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Public+Sans:ital,wght@0,300..800;1,300..700&family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.

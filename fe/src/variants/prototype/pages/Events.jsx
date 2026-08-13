@@ -1,34 +1,33 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Shell, { Block, BlockHead, Btn, Field, Input, Kicker, Meta, State, Skeleton, TagChip } from '../parts';
+import Shell, { Btn, Chip, DateBlock, Field, Input, Panel, State, Skeleton } from '../parts';
 import { useEventsSearch, useTags } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
 
-function Notice({ event, orgName }) {
-  const d = event.date ? new Date(event.date) : null;
+/* Browse and filter. Filters apply on submit rather than on every keystroke,
+   so the results list does not thrash while you type. */
+
+function Row({ event, orgName }) {
   const full = event.spotsLeft === 0;
 
   return (
-    <Link className="dsp-item" to={`/events/${event.id}`}>
-      <span className="dsp-lead">
-        <span className="dsp-date">
-          <b>{d ? d.getDate() : '—'}</b>
-          <span>{d ? d.toLocaleString('en', { month: 'short' }) : 'TBC'}</span>
-        </span>
-        {event.heroImage && <img className="dsp-thumb" src={event.heroImage} alt="" loading="lazy" />}
+    <Link className="ptp-item" to={`/events/${event.id}`}>
+      <span className="ptp-lead">
+        <DateBlock iso={event.date} />
+        {event.heroImage && <img className="ptp-thumb" src={event.heroImage} alt="" loading="lazy" />}
       </span>
-      <span className="dsp-item-body">
-        <span className="dsp-item-title">{event.title}</span>
-        <span className="dsp-item-meta">
+      <span className="ptp-item-body">
+        <span className="ptp-item-title">{event.title}</span>
+        <span className="ptp-item-meta">
           {orgName && <span>{orgName}</span>}
           {event.address && <span>{shortAddress(event.address)}</span>}
           <span>{formatDuration(event.duration)}</span>
         </span>
       </span>
-      <span className="dsp-tagrow">
+      <span className="ptp-chiprow">
         {full
-          ? <TagChip tone="on">Full</TagChip>
-          : event.tags.slice(0, 2).map(t => <TagChip key={t}>{t.replace(/-/g, ' ')}</TagChip>)}
+          ? <Chip tone="sec">Full</Chip>
+          : event.tags.slice(0, 2).map(t => <Chip key={t}>{t.replace(/-/g, ' ')}</Chip>)}
       </span>
     </Link>
   );
@@ -40,49 +39,50 @@ export default function Events() {
 
   return (
     <Shell>
-      <div className="dsp-shell">
-        <div className="dsp-head">
+      <div className="ptp-shell">
+        <div className="ptp-head">
           <div>
-            <Kicker>The board</Kicker>
-            <h1 className="dsp-h1">Openings</h1>
+            <h1 className="ptp-h1">Openings</h1>
+            <p className="ptp-sub">
+              {s.total != null
+                ? `${s.total} shift${s.total === 1 ? '' : 's'} posted by local organizations`
+                : 'Volunteer shifts posted by local organizations'}
+            </p>
           </div>
-          <Meta>
-            {s.total != null ? `${s.total} posted` : 'Volunteer shifts'}
-          </Meta>
         </div>
 
-        <div className="dsp-cols">
+        <div className="ptp-cols">
           <div>
             {s.loading ? (
               <Skeleton rows={6} />
             ) : s.error ? (
               <State error title="Could not load openings">
-                The API is not answering. Try again shortly.
+                The API is not answering. Try again in a moment.
               </State>
             ) : s.events.length === 0 ? (
-              <State title="Nothing matches">
-                Widen the dates, clear a cause, or try a different week.
+              <State title="Nothing matches those filters">
+                Widen the radius, clear a cause, or try a different week.
                 {s.hasFilters && (
-                  <div style={{ marginTop: 16 }}>
-                    <Btn sm variant="ghost" onClick={s.reset}>Clear filters</Btn>
+                  <div style={{ marginTop: 18 }}>
+                    <Btn sm variant="ghost" onClick={s.reset}>Clear all filters</Btn>
                   </div>
                 )}
               </State>
             ) : (
               <>
-                <div className="dsp-list">
+                <div className="ptp-list">
                   {s.events.map(ev => (
-                    <Notice key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} />
+                    <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} />
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 22 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 28 }}>
                   <Btn sm variant="ghost" disabled={s.page === 0} onClick={() => s.setPage(p => p - 1)}>
-                    Prev
+                    Previous
                   </Btn>
-                  <Meta>
+                  <span className="ptp-muted">
                     {s.rangeStart}–{s.rangeEnd}{s.total != null ? ` of ${s.total}` : ''}
-                  </Meta>
+                  </span>
                   <Btn sm variant="ghost" disabled={!s.hasMore} onClick={() => s.setPage(p => p + 1)}>
                     Next
                   </Btn>
@@ -91,22 +91,23 @@ export default function Events() {
             )}
           </div>
 
-          <aside className="dsp-aside">
-            <Block>
-              <BlockHead right={s.hasFilters ? <button onClick={s.reset} style={{ background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer' }}>Clear</button> : null}>
-                Filter
-              </BlockHead>
+          <aside className="ptp-aside">
+            <Panel>
+              <div className="ptp-panel-head">
+                <h3 className="ptp-h3">Filter</h3>
+                {s.hasFilters && <Btn sm variant="quiet" onClick={s.reset}>Clear</Btn>}
+              </div>
 
-              <form style={{ padding: 16 }} onSubmit={e => { e.preventDefault(); s.search(); }}>
+              <form style={{ padding: 22 }} onSubmit={e => { e.preventDefault(); s.search(); }}>
                 <Field label="Keyword">
                   <Input
                     value={s.draft.keyword}
                     onChange={e => s.setField('keyword', e.target.value)}
-                    placeholder="Clean-up, food bank"
+                    placeholder="Clean-up, food bank…"
                   />
                 </Field>
 
-                <div className="dsp-pair">
+                <div className="ptp-pair">
                   <Field label="From">
                     <Input type="date" value={s.draft.dateFrom} onChange={e => s.setField('dateFrom', e.target.value)} />
                   </Field>
@@ -117,17 +118,16 @@ export default function Events() {
 
                 <Field label="Causes">
                   {tags.loading ? (
-                    <Meta>Loading</Meta>
+                    <span className="ptp-muted">Loading…</span>
                   ) : (
-                    <div className="dsp-tagrow" style={{ maxHeight: 150, overflowY: 'auto' }}>
+                    <div className="ptp-chiprow" style={{ maxHeight: 160, overflowY: 'auto' }}>
                       {tags.tags.slice(0, 24).map(t => {
                         const on = s.draft.selectedTags.includes(t.slug);
                         return (
                           <button
                             key={t.slug}
                             type="button"
-                            className={'dsp-tag' + (on ? ' dsp-tag--on' : '')}
-                            style={{ cursor: 'pointer' }}
+                            className={'ptp-chip' + (on ? ' ptp-chip--accent' : '')}
                             onClick={() => s.toggleTag(t.slug)}
                             aria-pressed={on}
                           >
@@ -139,11 +139,11 @@ export default function Events() {
                   )}
                 </Field>
 
-                {s.validationError && <span className="dsp-field-err">{s.validationError}</span>}
+                {s.validationError && <span className="ptp-field-err">{s.validationError}</span>}
 
-                <Btn block type="submit" style={{ marginTop: 8 }}>Apply</Btn>
+                <Btn block type="submit" style={{ marginTop: 10 }}>Apply filters</Btn>
               </form>
-            </Block>
+            </Panel>
           </aside>
         </div>
       </div>

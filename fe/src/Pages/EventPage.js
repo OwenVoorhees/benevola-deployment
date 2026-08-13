@@ -12,7 +12,7 @@ import Footer from '../Components/Footer';
 import Breadcrumb from '../Components/Breadcrumb';
 import {
   LeafLogo,
-  IconCalendar, IconClock, IconUsers, IconPin,
+  IconCalendar, IconClock, IconUsers,
   IconEdit, IconCheck, IconX, IconCheckCircle,
 } from '../Components/Icons';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Shell, {
   Avatar, Block, BlockHead, Btn, Crumbs, Field, Input, Kicker, Meta,
-  State, Skeleton, Tag_, Toast,
+  State, Skeleton, TagChip, Toast,
 } from '../parts';
 import DangerZone from '../../../Components/DangerZone';
 import ImageField from '../../../shared/ImageField';
@@ -116,7 +116,7 @@ export default function Volunteer() {
                         </span>
                       </span>
                       <span className="dsp-tagrow">
-                        {ev.tags.slice(0, 2).map(t => <Tag_ key={t}>{t.replace(/-/g, ' ')}</Tag_>)}
+                        {ev.tags.slice(0, 2).map(t => <TagChip key={t}>{t.replace(/-/g, ' ')}</TagChip>)}
                       </span>
                     </Link>
                   );

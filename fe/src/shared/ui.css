@@ -39,6 +39,71 @@
   --ui-focus:       0 0 0 3px oklch(from var(--ui-accent) l c h / 0.32);
 }
 
+/* The two tunable designs. Their own tokens already flip between light and
+   dark, so one block each covers both modes. */
+[data-design='default'] {
+  --ui-ground:      var(--def-ground);
+  --ui-ground-2:    var(--def-ground-2);
+  --ui-panel:       var(--def-panel);
+
+  --ui-ink:         var(--def-ink);
+  --ui-ink-2:       var(--def-ink-2);
+  --ui-ink-3:       var(--def-ink-3);
+
+  --ui-line:        var(--def-line);
+  --ui-line-2:      var(--def-line-2);
+
+  --ui-accent:      var(--def-pri);
+  --ui-accent-2:    var(--def-pri-hover);
+  --ui-accent-ink:  var(--def-pri-ink);
+  --ui-accent-soft: var(--def-pri-soft);
+
+  --ui-danger:      var(--def-danger);
+  --ui-danger-soft: var(--def-danger-soft);
+
+  --ui-radius:      var(--def-r);
+  --ui-radius-sm:   var(--def-r-sm);
+  --ui-font:        var(--def-font);
+  --ui-shadow:      var(--def-shadow);
+}
+
+[data-design='prototype'] {
+  --ui-ground:      var(--ptp-ground);
+  --ui-ground-2:    var(--ptp-panel-2);
+  --ui-panel:       var(--ptp-panel);
+
+  --ui-ink:         var(--ptp-ink);
+  --ui-ink-2:       var(--ptp-ink-2);
+  --ui-ink-3:       var(--ptp-ink-3);
+
+  --ui-line:        var(--ptp-line);
+  --ui-line-2:      var(--ptp-line-2);
+
+  /* The fill token, not the text-safe one: --ui-accent is used as a button
+     background with --ui-accent-ink on top, and those two are a matched pair. */
+  --ui-accent:      var(--ptp-pri);
+  --ui-accent-2:    var(--ptp-pri);
+  --ui-accent-ink:  var(--ptp-pri-ink);
+  --ui-accent-soft: var(--ptp-accent-soft);
+
+  --ui-danger:      var(--ptp-danger);
+  --ui-danger-soft: var(--ptp-danger-soft);
+
+  --ui-radius:      var(--ptp-r);
+  --ui-radius-sm:   var(--ptp-r-sm);
+  --ui-font:        var(--ptp-font);
+  --ui-shadow:      var(--ptp-shadow);
+}
+
+/* Links and eyebrows on the shared pages are text, not fills, so they need
+   the text-safe accent instead of the raw pick. */
+[data-design='prototype'] .ui-eyebrow,
+[data-design='prototype'] .ui-foot-link a { color: var(--ptp-accent); }
+
+/* Both tunable designs use pill buttons, and the shared pages should match. */
+[data-design='default'] .ui-btn,
+[data-design='prototype'] .ui-btn { border-radius: 999px; }
+
 [data-design='vesper'] {
   --ui-ground:      var(--vsp-ground);
   --ui-ground-2:    var(--vsp-ground-2);

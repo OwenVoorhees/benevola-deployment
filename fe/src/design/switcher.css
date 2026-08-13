@@ -133,14 +133,151 @@
 .dsw-option-text { display: grid; gap: 2px; }
 
 .dsw-option-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12.5px;
   letter-spacing: 0.03em;
+}
+
+/* Marks the two designs that read the brand colours, so it is obvious why the
+   picker below appears for some options and not others. */
+.dsw-option-tag {
+  padding: 1px 5px;
+  border: 1px solid oklch(42% 0.01 260);
+  border-radius: 3px;
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: oklch(66% 0.01 260);
+}
+
+.dsw-option.is-active .dsw-option-tag {
+  border-color: oklch(52% 0.08 150);
+  color: oklch(82% 0.13 145);
 }
 
 .dsw-option-tagline {
   font-size: 10.5px;
   line-height: 1.4;
   color: oklch(63% 0.01 260);
+}
+
+/* ── Brand colour ─────────────────────────────────────────────────── */
+
+.dsw-brand {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid oklch(30% 0.008 260);
+}
+
+.dsw-brand-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.dsw-reset {
+  padding: 3px 8px;
+  border: 1px solid oklch(36% 0.01 260);
+  border-radius: 999px;
+  background: none;
+  color: oklch(72% 0.008 260);
+  font: inherit;
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.dsw-reset:hover { background: oklch(26% 0.01 260); color: oklch(94% 0.004 260); }
+
+.dsw-color {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.dsw-color-label {
+  flex: 1;
+  font-size: 11px;
+  color: oklch(70% 0.01 260);
+  cursor: pointer;
+}
+
+/* The native swatch is unstyleable across browsers, so the input is sized to
+   fill a wrapper that draws the actual well. */
+.dsw-color-well {
+  position: relative;
+  display: block;
+  width: 30px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.22);
+  overflow: hidden;
+}
+
+.dsw-color-well input {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.dsw-color-well:focus-within {
+  box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.3), 0 0 0 2px oklch(78% 0.17 145 / 0.6);
+}
+
+.dsw-color-hex {
+  width: 62px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-align: right;
+  color: oklch(60% 0.01 260);
+}
+
+.dsw-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dsw-preset {
+  width: 26px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  /* Reads as a pair, not a single swatch: the picker sets two colours. */
+  background: linear-gradient(105deg, var(--a) 0 52%, var(--b) 52% 100%);
+  cursor: pointer;
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dsw-preset:hover { transform: translateY(-1px); }
+.dsw-preset.is-active { border-color: oklch(94% 0.004 260); }
+.dsw-preset:focus-visible { outline: 2px solid oklch(78% 0.17 145); outline-offset: 2px; }
+
+.dsw-brand-note {
+  margin: 10px 0 0;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: oklch(56% 0.01 260);
+}
+
+.dsw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .dsw-hint {
@@ -155,6 +292,10 @@
   color: oklch(74% 0.01 260);
 }
 
+/* The panel grew a colour section; on short viewports it scrolls rather than
+   running off the top of the screen. */
+.dsw-panel { max-height: calc(100vh - 92px); overflow-y: auto; }
+
 @media (max-width: 640px) {
   .dsw       { right: 12px; bottom: 12px; }
   .dsw-panel { width: min(290px, calc(100vw - 24px)); }
@@ -162,5 +303,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dsw-panel   { animation: none; }
-  .dsw-trigger { transition: none; }
+  .dsw-trigger,
+  .dsw-preset  { transition: none; }
 }

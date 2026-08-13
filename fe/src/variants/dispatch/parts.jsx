@@ -44,7 +44,7 @@ export const BlockHead = ({ children, right }) => (
   </div>
 );
 
-export const Tag_ = ({ children, tone }) => (
+export const TagChip = ({ children, tone }) => (
   <span className={'dsp-tag' + (tone ? ` dsp-tag--${tone}` : '')}>{children}</span>
 );
 
