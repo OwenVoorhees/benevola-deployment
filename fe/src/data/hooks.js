@@ -127,13 +127,40 @@ const BLANK_FILTERS = {
   sort: 'date', order: 'asc',
 };
 
-export function useEventsSearch() {
+/** A message when the draft contradicts itself, otherwise an empty string. */
+function describeFilterConflict(d) {
+  if (d.dateFrom && d.dateTo && d.dateFrom > d.dateTo) {
+    return 'The "from" date has to come before the "to" date.';
+  }
+  if (d.timeFrom && d.timeTo && d.timeFrom > d.timeTo) {
+    return 'The "from" time has to come before the "to" time.';
+  }
+  return '';
+}
+
+/**
+ * @param {object}  [opts]
+ * @param {boolean} [opts.live]  Apply filters as they are edited rather than
+ *                               waiting for search(). Off by default so the
+ *                               designs that render a submit button keep the
+ *                               behaviour their layout promises.
+ * @param {number}  [opts.delay] Debounce for live mode, in milliseconds.
+ */
+export function useEventsSearch({ live = false, delay = 280 } = {}) {
   const [events,  setEvents]  = useState([]);
   const [total,   setTotal]   = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(false);
   const [page,    setPage]    = useState(0);
+
+  /* Live search re-queries on almost every keystroke. Flipping `loading` each
+     time would swap the whole list out for skeletons and make the page strobe
+     under the cursor, so the first query owns `loading` and every later one
+     reports through `refreshing` instead: results stay on screen, slightly
+     stale, while the next set is on its way. */
+  const [refreshing, setRefreshing] = useState(false);
+  const settled = useRef(false);
 
   /* Draft filter state — what the user is editing right now. */
   const [draft, setDraft] = useState(BLANK_FILTERS);
@@ -148,7 +175,7 @@ export function useEventsSearch() {
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    if (settled.current) setRefreshing(true); else setLoading(true);
     setError(false);
     searchEvents(applied, page)
       .then(({ rows, total: apiTotal }) => {
@@ -160,24 +187,48 @@ export function useEventsSearch() {
             ? (page * applied.limit + rows.length) < apiTotal
             : rows.length === applied.limit
         );
+        settled.current = true;
         setLoading(false);
+        setRefreshing(false);
       })
-      .catch(() => { if (alive) { setError(true); setLoading(false); } });
+      .catch(() => {
+        if (!alive) return;
+        setError(true);
+        setLoading(false);
+        setRefreshing(false);
+      });
     return () => { alive = false; };
   }, [applied, page]);
 
+  /* Live mode: promote the draft once editing pauses. Discrete controls (a
+     cause, a date) go through the same timer, so ticking three causes in
+     quick succession still costs one request rather than three.
+
+     On mount this schedules setApplied(BLANK_FILTERS) while `applied` is
+     already that exact object, so React bails out on identity and no second
+     request goes out behind the initial one. */
+  useEffect(() => {
+    if (!live) return undefined;
+    const conflict = describeFilterConflict(draft);
+    setValidationError(conflict);
+    // A contradictory range would return nothing; hold the last good results
+    // and let the message explain why the list stopped moving.
+    if (conflict) return undefined;
+    const timer = setTimeout(() => {
+      setApplied(draft);
+      setPage(0);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [live, delay, draft]);
+
   const orgNames = useOrgNames(events);
 
+  /* Still wired up in live mode: submitting the form (Enter in the keyword
+     field) skips the debounce instead of doing nothing. */
   const search = useCallback(() => {
-    if (draft.dateFrom && draft.dateTo && draft.dateFrom > draft.dateTo) {
-      setValidationError('The "from" date has to come before the "to" date.');
-      return;
-    }
-    if (draft.timeFrom && draft.timeTo && draft.timeFrom > draft.timeTo) {
-      setValidationError('The "from" time has to come before the "to" time.');
-      return;
-    }
-    setValidationError('');
+    const conflict = describeFilterConflict(draft);
+    setValidationError(conflict);
+    if (conflict) return;
     setApplied(draft);
     setPage(0);
   }, [draft]);
@@ -227,7 +278,7 @@ export function useEventsSearch() {
   const rangeEnd   = page * limit + events.length;
 
   return {
-    events, total, hasMore, loading, error, orgNames,
+    events, total, hasMore, loading, refreshing, error, orgNames,
     page, setPage, totalPages, rangeStart, rangeEnd, limit,
     draft, setField, setLimit, toggleTag,
     locationLabel, setLocationLabel, setLocation, clearLocation,

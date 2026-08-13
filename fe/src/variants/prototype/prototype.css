@@ -60,6 +60,11 @@
   --ptp-r-lg: 22px;
   --ptp-r-sm: 8px;
 
+  /* Native widgets — the date pickers in the filter rail, the clear button on
+     the search field, scrollbars — are painted by the browser, not by us.
+     Without this they stay in light dress on the near-black ground. */
+  color-scheme: dark;
+
   --ptp-shadow: 0 4px 14px oklch(0% 0 0 / 0.4), 0 18px 46px oklch(0% 0 0 / 0.34);
   --ptp-ease:   cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -67,6 +72,8 @@
 /* The inverse scene: same poster energy, read in daylight. Fills keep their
    ink; only the ground and the text-safe accent flip. */
 [data-design='prototype'][data-theme='light'] {
+  color-scheme: light;
+
   --ptp-ground:   oklch(from var(--brand-primary) 97.5% 0.006 h);
   --ptp-ground-2: oklch(from var(--brand-primary) 94% 0.009 h);
   --ptp-panel:    oklch(from var(--brand-primary) 99.5% 0.003 h);
@@ -289,6 +296,22 @@
   border-bottom: 1px solid var(--ptp-line);
 }
 
+.ptp-panel-head-right { display: flex; align-items: center; gap: 10px; }
+
+/* Live search: the only moving part while a query is in flight. The results
+   below hold still on purpose — dimming or skeletoning them on every
+   keystroke is what makes search-as-you-type feel broken. */
+.ptp-spin {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ptp-line-2);
+  border-top-color: var(--ptp-accent);
+  border-radius: 50%;
+  animation: ptp-spin 640ms linear infinite;
+}
+@keyframes ptp-spin { to { transform: rotate(1turn); } }
+
 /* ── Fields ─────────────────────────────────────────────────────────── */
 
 .ptp-row { margin-bottom: 18px; }
@@ -324,6 +347,7 @@
 .ptp-field--err { border-color: var(--ptp-danger); }
 textarea.ptp-field { resize: vertical; line-height: 1.6; }
 .ptp-field[type='date'], .ptp-field[type='time'] { padding-left: 12px; padding-right: 12px; font-size: 0.87rem; }
+.ptp-field[type='search']::-webkit-search-cancel-button { cursor: pointer; }
 
 .ptp-field-err { display: block; margin-top: 6px; font-size: 0.8rem; font-weight: 600; color: var(--ptp-danger); }
 
@@ -777,4 +801,6 @@ button.ptp-chip--accent:hover { color: var(--ptp-pri-ink); background: var(--ptp
   .ptp-btn, .ptp-item, .ptp-meter-fill, .ptp-toast, .ptp-faq-sign::after { transition: none; }
   .ptp-btn:hover:not(:disabled) { transform: none; }
   .ptp-skel { animation: none; }
+  /* The spinner reports state, so it slows rather than stops. */
+  .ptp-spin { animation-duration: 2s; }
 }

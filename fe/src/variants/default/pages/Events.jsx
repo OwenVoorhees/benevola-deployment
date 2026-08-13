@@ -4,8 +4,9 @@ import Shell, { Btn, Chip, DateBlock, Field, Input, Panel, State, Skeleton } fro
 import { useEventsSearch, useTags } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
 
-/* Browse and filter. Filters apply on submit rather than on every keystroke,
-   so the results list does not thrash while you type. */
+/* Browse and filter. Filters apply as you type: the hook debounces, and
+   re-queries report through `refreshing` rather than `loading`, so the list
+   stays on screen instead of collapsing into skeletons between keystrokes. */
 
 function Row({ event, orgName }) {
   const full = event.spotsLeft === 0;
@@ -34,7 +35,7 @@ function Row({ event, orgName }) {
 }
 
 export default function Events() {
-  const s    = useEventsSearch();
+  const s    = useEventsSearch({ live: true });
   const tags = useTags();
 
   return (
@@ -43,7 +44,9 @@ export default function Events() {
         <div className="def-head">
           <div>
             <h1 className="def-h1">Openings</h1>
-            <p className="def-sub">
+            {/* The count is the confirmation that typing did something, so it
+                is also the live region rather than a second hidden one. */}
+            <p className="def-sub" aria-live="polite">
               {s.total != null
                 ? `${s.total} shift${s.total === 1 ? '' : 's'} posted by local organizations`
                 : 'Volunteer shifts posted by local organizations'}
@@ -52,7 +55,7 @@ export default function Events() {
         </div>
 
         <div className="def-cols">
-          <div>
+          <div aria-busy={s.refreshing || undefined}>
             {s.loading ? (
               <Skeleton rows={6} />
             ) : s.error ? (
@@ -95,12 +98,19 @@ export default function Events() {
             <Panel float>
               <div className="def-panel-head">
                 <h3 className="def-h3">Filter</h3>
-                {s.hasFilters && <Btn sm variant="quiet" onClick={s.reset}>Clear</Btn>}
+                <span className="def-panel-head-right">
+                  {/* Only feedback that a query is in flight; the results
+                      themselves deliberately do not move or dim. */}
+                  {s.refreshing && <span className="def-spin" aria-hidden="true" />}
+                  {s.hasFilters && <Btn sm variant="quiet" onClick={s.reset}>Clear</Btn>}
+                </span>
               </div>
 
+              {/* Submitting skips the debounce; it is not the only way to search. */}
               <form style={{ padding: 18 }} onSubmit={e => { e.preventDefault(); s.search(); }}>
                 <Field label="Keyword">
                   <Input
+                    type="search"
                     value={s.draft.keyword}
                     onChange={e => s.setField('keyword', e.target.value)}
                     placeholder="Clean-up, food bank…"
@@ -140,8 +150,6 @@ export default function Events() {
                 </Field>
 
                 {s.validationError && <span className="def-field-err">{s.validationError}</span>}
-
-                <Btn block type="submit" style={{ marginTop: 8 }}>Apply filters</Btn>
               </form>
             </Panel>
           </aside>

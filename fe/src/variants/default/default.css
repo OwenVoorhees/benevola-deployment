@@ -75,11 +75,18 @@
   --def-r-lg: 16px;
   --def-r-sm: 7px;
 
+  /* Native widgets — the date pickers in the filter rail, the clear button on
+     the search field, scrollbars — are painted by the browser, not by us.
+     Without this they stay in light dress on the dark ground. */
+  color-scheme: light;
+
   /* Ease-out-quint. No bounce anywhere in this theme. */
   --def-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 [data-design='default'][data-theme='dark'] {
+  color-scheme: dark;
+
   --def-ground:   oklch(from var(--brand-primary) 16.5% 0.014 h);
   --def-ground-2: oklch(from var(--brand-primary) 13.5% 0.014 h);
   --def-panel:    oklch(from var(--brand-primary) 20.5% 0.016 h);
@@ -370,6 +377,22 @@
   border-bottom: 1px solid var(--def-line);
 }
 
+.def-panel-head-right { display: flex; align-items: center; gap: 10px; }
+
+/* Live search: the only moving part while a query is in flight. The results
+   below hold still on purpose — dimming or skeletoning them on every
+   keystroke is what makes search-as-you-type feel broken. */
+.def-spin {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--def-line-2);
+  border-top-color: var(--def-pri-text);
+  border-radius: 50%;
+  animation: def-spin 640ms linear infinite;
+}
+@keyframes def-spin { to { transform: rotate(1turn); } }
+
 /* ── Fields ─────────────────────────────────────────────────────────── */
 
 .def-row { margin-bottom: 18px; }
@@ -406,6 +429,7 @@
 .def-field--err { border-color: var(--def-danger); }
 textarea.def-field { resize: vertical; line-height: 1.6; }
 .def-field[type='date'], .def-field[type='time'] { padding-left: 11px; padding-right: 11px; font-size: 0.86rem; }
+.def-field[type='search']::-webkit-search-cancel-button { cursor: pointer; }
 
 .def-field-err { display: block; margin-top: 5px; font-size: 0.79rem; color: var(--def-danger); }
 
@@ -917,4 +941,6 @@ button.def-chip--accent:hover { color: var(--def-pri-text); }
   }
   .def-skel { animation: none; }
   .def-preview { transform: none; }
+  /* The spinner reports state, so it slows rather than stops. */
+  .def-spin { animation-duration: 2s; }
 }
