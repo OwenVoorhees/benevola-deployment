@@ -8,54 +8,37 @@ const {
     eventValidation, 
     eventParamValidation, 
     updateEventValidation, 
-    EventsQuerySchema, 
-    searchQueryValidation,
+    EventsQuerySchema,
 } = require("../schemas/event.schema");
 const { createTagValidation, tagSlugValidation } = require('../schemas/tag.schema');
 const validate = require("../middleware/validate");
 const load = require("../middleware/load");
 const parseTags = require("../middleware/parseTags")
-const { searchEvents, indexEvent, removeEvent } = require('../services/searchService');
 const { getEvents } = require("../services/buildEventQuery");
 const authenticate = require("../middleware/authenticate");
 const { requireUser, requireOrg, requireAdmin, verifyOwnership } = require("../middleware/authorization");
 
-// GET events
-router.get('/',
-    validate({ query: EventsQuerySchema }),
-    async (req, res, next) => {
-        const query = req.validatedQuery
+// GET events. `/search` is the same endpoint under another name: a keyword is
+// just one more filter, so both share a handler. Keeping them together is what
+// lets a keyword combine with tags, dates and location instead of replacing
+// them, and lets both report a `total` the frontend can paginate against.
+const listEvents = async (req, res, next) => {
+    try {
+        const { rows, total } = await getEvents(req.validatedQuery);
 
-        try {
-            const events = await getEvents(query);
-
-            return res.status(200).json({
-                message: "success",
-                results: events.length,
-                data: events
-            })
-        } catch (err) {
-            next(err);
-        }
+        return res.status(200).json({
+            message: "success",
+            results: rows.length,
+            total,
+            data: rows
+        })
+    } catch (err) {
+        next(err);
     }
-);
+};
 
-// SEARCH events
-router.get('/search',
-    validate({ query: searchQueryValidation }),
-    async (req, res, next) => {
-        try {
-            const { q } = req.validatedQuery;
-            const results = await searchEvents(q);
-            return res.status(200).json({
-                message: "success",
-                data: results
-            });
-        } catch (err) {
-            next(err);
-        }
-    }
-);
+router.get('/', validate({ query: EventsQuerySchema }), listEvents);
+router.get('/search', validate({ query: EventsQuerySchema }), listEvents);
 
 // GET list of tags
 router.get('/tags', async (req, res, next) => {
@@ -171,7 +154,6 @@ router.put('/:eid',
                 return { event, tags };
             })
 
-            await indexEvent(updated.event);
             return res.status(200).json({
                 message: "success",
                 "data": updated
@@ -214,7 +196,6 @@ router.patch('/:eid',
                 return { event, tags };
             });
 
-            await indexEvent(updated.event);
             return res.status(200).json({
                 message: "success",
                 "data": updated
@@ -240,7 +221,6 @@ router.delete('/:eid',
         const event = req.event;
 
         try {
-            await removeEvent(event.id);
             await event.destroy();
             return res.status(204).end();
         } catch (err) {

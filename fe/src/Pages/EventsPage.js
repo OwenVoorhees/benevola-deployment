@@ -50,10 +50,13 @@ function buildUrl(filters, page) {
   if (filters.timeFrom)  params.set('afterTime',   filters.timeFrom);
   if (filters.timeTo)    params.set('beforeTime',  filters.timeTo);
 
+  /* The API takes lat/lng/radius, and its radius is in miles — the same unit
+     the slider already uses, so no conversion. All three or none: sending a
+     partial set is a 400. */
   if (filters.locationLat && filters.locationLng) {
-    params.set('nearLat',  filters.locationLat);
-    params.set('nearLng',  filters.locationLng);
-    params.set('radiusM',  Math.round(filters.radiusMi * 1609.344));
+    params.set('lat',     filters.locationLat);
+    params.set('lng',     filters.locationLng);
+    params.set('radius',  filters.radiusMi);
   }
 
   params.set('sort',   filters.sort);
