@@ -12,8 +12,9 @@ import {
 } from '../../../Components/Icons';
 
 function RsvpPanel({ event, rsvped, onRsvp }) {
-  const taken = event.capacity - event.spotsLeft;
-  const pct   = Math.min(100, Math.round((taken / Math.max(1, event.capacity)) * 100));
+  const known = event.spotsLeft != null && event.capacity != null;
+  const taken = known ? event.capacity - event.spotsLeft : 0;
+  const pct   = known ? Math.min(100, Math.round((taken / Math.max(1, event.capacity)) * 100)) : 0;
 
   return (
     <div className="vsp-panel vsp-rsvp">
@@ -37,7 +38,7 @@ function RsvpPanel({ event, rsvped, onRsvp }) {
       <div className="vsp-meter-wrap">
         <div className="vsp-meter-head">
           <Eyebrow>Roster</Eyebrow>
-          <Meta>{event.spotsLeft} of {event.capacity} spots left</Meta>
+          <Meta>{known ? `${event.spotsLeft} of ${event.capacity} spots left` : 'No limit set'}</Meta>
         </div>
         <div className="vsp-meter">
           <div

@@ -176,7 +176,7 @@ export function Login() {
           />
         </Field>
 
-        <a className="vsp-forgot" href="#forgot">Forgot your password?</a>
+        <Link className="vsp-forgot" to="/forgot-password">Forgot your password?</Link>
 
         {apiError && <div className="vsp-auth-err">{apiError}</div>}
 

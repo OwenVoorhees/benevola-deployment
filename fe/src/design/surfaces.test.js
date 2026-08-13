@@ -76,6 +76,8 @@ const ROUTE_FOR = {
   Volunteer: '/volunteer/7',
   Login:     '/login',
   Signup:    '/signup',
+  ForgotPassword: '/forgot-password',
+  ResetPassword:  '/reset-password?token=demo-token',
   About:     '/about',
   NotFound:  '/nowhere',
 };
@@ -85,6 +87,8 @@ const PATH_PATTERN = {
   EventNew:  '/organizations/:id/events/new',
   Org:       '/organizations/:id',
   Volunteer: '/volunteer/:id',
+  // Query strings are not part of the route pattern.
+  ResetPassword: '/reset-password',
 };
 
 describe.each(DESIGN_IDS)('design: %s', (design) => {

@@ -10,6 +10,7 @@ import {
   fetchOrgEvents, fetchUserEvents, fetchOrgName,
   searchEvents, geocode,
   updateEvent, updateOrg, updateUser,
+  deleteEvent, deleteOrg, deleteUser,
   fetchEventAttendees, joinEvent, leaveEvent,
   describeApiError,
 } from './api';
@@ -304,6 +305,9 @@ export function useEventDetail(id) {
   const [orgName, setOrgName] = useState(null);
   const [rsvped,  setRsvped]  = useState(false);
   const [rsvpBusy, setRsvpBusy] = useState(false);
+  const [roster,  setRoster]  = useState([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const toast = useToast();
 
   const orgId = base.record?.organizationId;
@@ -318,15 +322,41 @@ export function useEventDetail(id) {
      this too, this just keeps the affordance from showing when it would 403. */
   const canEdit = isOrg && sameId(userId, orgId);
 
-  /* Reflect real attendance rather than assuming: ask who is signed up. */
+  /* Am I signed up? Derived from my own attendance rather than the event
+     roster, which is readable only by the organizer. */
   useEffect(() => {
     if (!isVolunteer || userId == null) { setRsvped(false); return; }
     let alive = true;
-    fetchEventAttendees(id)
-      .then(list => { if (alive) setRsvped(list.some(u => sameId(u.id, userId))); })
+    fetchUserEvents(userId)
+      .then(list => { if (alive) setRsvped(list.some(ev => sameId(ev.id, id))); })
       .catch(() => { if (alive) setRsvped(false); });
     return () => { alive = false; };
   }, [id, isVolunteer, userId]);
+
+  /* The roster is the organizer's view of who turned up. Fetched only for the
+     owning org, because that is the only principal the API will serve it to. */
+  useEffect(() => {
+    if (!canEdit) { setRoster([]); return; }
+    let alive = true;
+    setRosterLoading(true);
+    fetchEventAttendees(id)
+      .then(list => { if (alive) setRoster(list); })
+      .catch(() => { if (alive) setRoster([]); })
+      .finally(() => { if (alive) setRosterLoading(false); });
+    return () => { alive = false; };
+  }, [id, canEdit]);
+
+  /* Keep the capacity meter honest the moment attendance changes, instead of
+     waiting for a reload. */
+  const shiftAttendance = (delta) => base.setRecord(r => {
+    if (!r) return r;
+    const count = Math.max(0, (r.attendeeCount ?? 0) + delta);
+    return {
+      ...r,
+      attendeeCount: count,
+      spotsLeft: r.capacity == null ? null : Math.max(0, r.capacity - count),
+    };
+  });
 
   const toggleRsvp = async () => {
     if (!auth) { toast.show('Log in as a volunteer to sign up for events.'); return; }
@@ -336,10 +366,12 @@ export function useEventDetail(id) {
       if (rsvped) {
         await leaveEvent(id);
         setRsvped(false);
+        shiftAttendance(-1);
         toast.show('RSVP cancelled.');
       } else {
         await joinEvent(id);
         setRsvped(true);
+        shiftAttendance(1);
         toast.show("You're signed up. Details are in your profile.");
       }
     } catch (err) {
@@ -355,7 +387,28 @@ export function useEventDetail(id) {
     return ok;
   };
 
-  return { ...base, save, canEdit, orgName, rsvped, rsvpBusy, toggleRsvp, toast };
+  /* Deleting is permanent and takes the RSVPs with it, so callers are expected
+     to confirm first. Resolves true once the event is gone. */
+  const remove = async () => {
+    setRemoving(true);
+    try {
+      await deleteEvent(id);
+      return true;
+    } catch (err) {
+      toast.show(describeApiError(err));
+      return false;
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  return {
+    ...base, save, canEdit, orgName,
+    rsvped, rsvpBusy, toggleRsvp,
+    roster, rosterLoading,
+    remove, removing,
+    toast,
+  };
 }
 
 /* ── Single organization + its events ────────────────────────────── */
@@ -365,6 +418,7 @@ export function useOrgDetail(id) {
   const toast = useToast();
   const [events,        setEvents]        = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [removing,      setRemoving]      = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -385,7 +439,22 @@ export function useOrgDetail(id) {
     return ok;
   };
 
-  return { ...base, save, canEdit, events, eventsLoading, toast };
+  /* Closing the organization cascades to its events in the database, so the
+     caller should make that consequence clear before calling this. */
+  const remove = async () => {
+    setRemoving(true);
+    try {
+      await deleteOrg(id);
+      return true;
+    } catch (err) {
+      toast.show(describeApiError(err));
+      return false;
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  return { ...base, save, canEdit, remove, removing, events, eventsLoading, toast };
 }
 
 /* ── Single volunteer + their events ─────────────────────────────── */
@@ -395,6 +464,7 @@ export function useUserDetail(id) {
   const toast = useToast();
   const [events,        setEvents]        = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [removing,      setRemoving]      = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -415,7 +485,20 @@ export function useUserDetail(id) {
     return ok;
   };
 
-  return { ...base, save, canEdit, events, eventsLoading, toast };
+  const remove = async () => {
+    setRemoving(true);
+    try {
+      await deleteUser(id);
+      return true;
+    } catch (err) {
+      toast.show(describeApiError(err));
+      return false;
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  return { ...base, save, canEdit, remove, removing, events, eventsLoading, toast };
 }
 
 /* ── Organization directory ──────────────────────────────────────── */

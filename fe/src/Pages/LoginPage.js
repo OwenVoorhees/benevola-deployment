@@ -200,7 +200,7 @@ function LoginPage() {
               </Field>
 
               <div className="forgot-pw">
-                <a href="#forgot">Forgot your password?</a>
+                <Link to="/forgot-password">Forgot your password?</Link>
               </div>
 
               {apiError && (

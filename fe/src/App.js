@@ -20,6 +20,8 @@ function App() {
             <Route path="/"                  element={<Surface name="Landing" />} />
             <Route path="/login"             element={<Surface name="Login" />} />
             <Route path="/signup"            element={<Surface name="Signup" />} />
+            <Route path="/forgot-password"   element={<Surface name="ForgotPassword" />} />
+            <Route path="/reset-password"    element={<Surface name="ResetPassword" />} />
             <Route path="/about"             element={<Surface name="About" />} />
             <Route path="/events"            element={<Surface name="Events" />} />
             <Route path="/events/:id"        element={<Surface name="Event" />} />

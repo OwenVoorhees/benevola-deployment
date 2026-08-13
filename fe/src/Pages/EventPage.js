@@ -60,7 +60,11 @@ export async function getEvent(id) {
     title:          data.title,
     description:    data.description,
     capacity:       data.capacity,
-    spotsLeft:      data.capacity,
+    attendeeCount:  data.attendeeCount ?? null,
+    // Real remaining spots, not just the capacity over again.
+    spotsLeft:      data.capacity == null || data.attendeeCount == null
+                      ? null
+                      : Math.max(0, data.capacity - data.attendeeCount),
     duration:       data.duration / 60,
     date:           data.date,
     address:        data.address,
@@ -312,8 +316,9 @@ function RSVPCard({ event, draft, editing, rsvped, onRsvp }) {
   const cap   = editing ? draft.capacity : event.capacity;
   const dur   = editing ? draft.duration : event.duration;
   const date  = editing ? draft.date     : event.date;
-  const taken = event.capacity - event.spotsLeft;
-  const pct   = Math.min(100, Math.round((taken / Math.max(1, cap)) * 100));
+  const known = event.spotsLeft != null && event.capacity != null;
+  const taken = known ? event.capacity - event.spotsLeft : 0;
+  const pct   = known ? Math.min(100, Math.round((taken / Math.max(1, cap)) * 100)) : 0;
 
   return (
     <div className="event-rsvp-card">
@@ -348,7 +353,9 @@ function RSVPCard({ event, draft, editing, rsvped, onRsvp }) {
           <>
             <div className="event-capacity-header">
               <span className="event-rsvp-value">{cap} volunteers</span>
-              <span className="event-capacity-spots">{event.spotsLeft} spots left</span>
+              <span className="event-capacity-spots">
+                {known ? `${event.spotsLeft} spots left` : 'No limit set'}
+              </span>
             </div>
             <div className="event-progress-track">
               <div
@@ -585,7 +592,7 @@ function EventPage() {
                   <IconClock size={14} /> {formatDuration(event.duration)}
                 </span>
                 <span className="evt-pill evt-pill--filled">
-                  <IconUsers size={14} /> {event.spotsLeft} spots left of {event.capacity}
+                  <IconUsers size={14} /> {event.spotsLeft ?? '—'} spots left of {event.capacity ?? '—'}
                 </span>
               </div>
             )}

@@ -1007,7 +1007,15 @@ select.vsp-field {
 }
 @media (max-width: 980px) { .vsp-layout { grid-template-columns: 1fr; } }
 
-.vsp-rail { position: sticky; top: calc(var(--vsp-nav-h) + 20px); }
+/* z-index matters here: the rail is sticky, and the event artwork further down
+   the DOM is position:relative. Without a stacking order of its own the rail
+   would be painted underneath those images as they scroll past it. */
+.vsp-rail {
+  position: sticky;
+  top: calc(var(--vsp-nav-h) + 20px);
+  z-index: 2;
+  min-width: 0;
+}
 @media (max-width: 980px) { .vsp-rail { position: static; } }
 
 .vsp-rail-head {
@@ -1035,7 +1043,27 @@ select.vsp-field {
 .vsp-rail-group { padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid var(--vsp-line); }
 .vsp-rail-group:last-of-type { border-bottom: none; }
 
-.vsp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* Date and time inputs carry a wide intrinsic minimum width (the browser's
+   picker chrome). Grid children default to min-width:auto, so without these
+   the two-up pair refuses to shrink and overflows the 282px rail, spilling
+   across the results column and over the event artwork. */
+.vsp-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-width: 0;
+}
+.vsp-pair > * { min-width: 0; }
+.vsp-pair .vsp-field { min-width: 0; max-width: 100%; }
+
+/* The default field padding leaves too little room for a date once the cell is
+   halved, which is what pushes the intrinsic width up in the first place. */
+.vsp-field[type='date'],
+.vsp-field[type='time'] {
+  padding-left: 11px;
+  padding-right: 11px;
+  font-size: 0.88rem;
+}
 
 .vsp-sublabel {
   display: block;

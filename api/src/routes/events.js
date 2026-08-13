@@ -119,11 +119,19 @@ router.get('/:eid',
         reqKey: "event",
         include: [{ model: Tag, through: { attributes: [] } }]
     }),
-    async (req, res) => {
-        return res.status(200).json({
-            message: "success",
-            data: req.event
-        });
+    async (req, res, next) => {
+        try {
+            // Who is attending is private to the organizer, but how many are
+            // attending is not — the public event page needs it for spots left.
+            const attendeeCount = await req.event.countUsers();
+
+            return res.status(200).json({
+                message: "success",
+                data: { ...req.event.toJSON(), attendeeCount },
+            });
+        } catch (err) {
+            next(err);
+        }
     }
 );
 
@@ -233,8 +241,13 @@ router.delete('/:eid',
     }
 );
 
-// GET event attendees
+// GET event attendees (the roster)
+// Restricted to the organization that owns the event: this returns volunteer
+// names and photos, which should not be readable by the whole internet. The
+// public event page uses `attendeeCount` from GET /:eid instead.
 router.get('/:eid/attendees',
+    authenticate,
+    requireOrg,
     validate({
         params: eventParamValidation,
     }),
@@ -248,13 +261,11 @@ router.get('/:eid/attendees',
             through: { attributes: [] }
         }]
     }),
+    verifyOwnership(req => req.event.organizationId),
     async (req, res) => {
-        const event = req.event;
-
-        console.log(event);
         return res.status(200).json({
             message: "success",
-            data: event.Users
+            data: req.event.Users
         });
     }
 );
@@ -274,6 +285,17 @@ router.post('/:eid/attendees',
         const user = req.user;
 
         try {
+            // Capacity has to hold here, not just in the UI, or "0 spots left"
+            // means nothing. Events with no capacity set are unlimited.
+            if (event.capacity != null) {
+                const attending = await event.countUsers();
+                const already = await event.hasUser(user.id);
+
+                if (!already && attending >= event.capacity) {
+                    return res.status(409).json({ message: "This event is full" });
+                }
+            }
+
             await event.addUser(user.id);
             return res.status(201).json({ message: "joined" });
         } catch (err) {

@@ -70,6 +70,7 @@ async function start() {
     const orgsRouter = require('./src/routes/organizations');
     const usersRouter = require('./src/routes/users');
     const authRouter = require('./src/routes/auth');
+    const uploadsRouter = require('./src/routes/uploads');
     const { errorHandler } = require("./src/middleware/errorHandler");
 
     // HOME
@@ -83,6 +84,7 @@ async function start() {
     app.use('/api/orgs', orgsRouter);
     app.use('/api/users', usersRouter);
     app.use('/api/auth', authRouter);
+    app.use('/api/uploads', uploadsRouter);
     app.use(errorHandler);
 
     await sequelize.authenticate();

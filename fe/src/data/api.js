@@ -45,7 +45,13 @@ export function describeApiError(err, fallback = 'Something went wrong. Please t
   if (err.status === 401) return 'Your session has expired. Please log in again.';
   if (err.status === 403) return 'You do not have permission to do that.';
   if (err.status === 404) return 'That record could not be found.';
-  if (err.status === 409) return err.body?.message || 'That conflicts with something that already exists.';
+  if (err.status === 409) {
+    // Sequelize reports these as "Unique constraint violation", which means
+    // nothing to a person — name the field that actually clashed.
+    const clash = err.body?.details?.[0]?.path;
+    if (clash) return `That ${clash} is already taken. Try another.`;
+    return err.body?.message || 'That conflicts with something that already exists.';
+  }
 
   // Zod failures come back as { bodyValidationError: [ { path, message } ] }
   const issue = err.body?.bodyValidationError?.[0] ?? err.body?.details?.[0];
@@ -70,13 +76,22 @@ async function getJson(url) {
 /* ── Mappers ─────────────────────────────────────────────────────── */
 
 export function mapEvent(d) {
+  /* attendeeCount only rides along on the single-event endpoint. Where it is
+     absent (list rows) we cannot know how many signed up, so leave spotsLeft
+     null rather than claiming the event is empty. */
+  const attendees = d.attendeeCount;
+  const spotsLeft = d.capacity == null || attendees == null
+    ? null
+    : Math.max(0, d.capacity - attendees);
+
   return {
     id:             d.id,
     organizationId: d.organizationId,
     title:          d.title,
     description:    d.description ?? '',
     capacity:       d.capacity,
-    spotsLeft:      d.capacity,
+    attendeeCount:  attendees ?? null,
+    spotsLeft,
     duration:       (d.duration ?? 0) / 60,
     date:           d.date,
     address:        d.address,
@@ -217,6 +232,64 @@ export async function fetchMe() {
   }
 }
 
+/* ── Password reset ──────────────────────────────────────────────────
+   The API deliberately answers the same way whether or not the address is
+   registered, so there is nothing here to branch on. */
+
+export async function requestPasswordReset(email, role) {
+  return request(`${API}/api/auth/forgot-password`, {
+    method: 'POST',
+    body: { email, role },
+  });
+}
+
+export async function resetPassword(token, password) {
+  return request(`${API}/api/auth/reset-password`, {
+    method: 'POST',
+    body: { token, password },
+  });
+}
+
+/* ── Image uploads ───────────────────────────────────────────────────
+   Two steps: ask the API to sign a URL, then PUT the file straight to
+   storage. The file never travels through our API. */
+
+/** Is a storage bucket wired up on this server? */
+export async function uploadsEnabled() {
+  try {
+    return Boolean(unwrap(await getJson(`${API}/api/uploads/status`))?.enabled);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Upload one image and resolve to its public URL, ready to save on a record.
+ * `kind` is one of: event-image, org-banner, org-icon, profile-pic.
+ */
+export async function uploadImage(file, kind) {
+  const { uploadUrl, publicUrl } = unwrap(await request(`${API}/api/uploads/sign`, {
+    method: 'POST',
+    body: { kind, contentType: file.type, contentLength: file.size },
+  }));
+
+  // Straight to the bucket. Content-Type must match what was signed exactly,
+  // or the signature check fails; the browser sets Content-Length itself.
+  const put = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+
+  if (!put.ok) {
+    throw new ApiError(put.status, {
+      message: 'The image could not be uploaded. Check the bucket CORS rules and try again.',
+    });
+  }
+
+  return publicUrl;
+}
+
 /* ── Writes ──────────────────────────────────────────────────────────
    The event endpoints validate with a .strict() schema, so the payload has
    to use the API's field names exactly — our UI shape (lat/lng/heroImage,
@@ -243,22 +316,26 @@ export function toEventPayload(draft) {
   return out;
 }
 
-/** The event write endpoints answer with { event, tags } rather than a row. */
-function mapWrittenEvent(payload) {
+/** The event write endpoints answer with { event, tags } rather than a row.
+    They also omit attendeeCount, so it has to be supplied by the caller. */
+function mapWrittenEvent(payload, attendeeCount) {
   const { event, tags } = unwrap(payload) ?? {};
-  return mapEvent({ ...event, Tags: tags ?? [] });
+  return mapEvent({ ...event, Tags: tags ?? [], attendeeCount });
 }
 
 export async function createEvent(orgId, draft) {
+  // Brand new event: nobody has signed up yet.
   return mapWrittenEvent(
-    await request(`${API}/api/orgs/${orgId}/events`, { method: 'POST', body: toEventPayload(draft) })
+    await request(`${API}/api/orgs/${orgId}/events`, { method: 'POST', body: toEventPayload(draft) }),
+    0
   );
 }
 
 export async function updateEvent(id, draft) {
-  return mapWrittenEvent(
-    await request(`${API}/api/events/${id}`, { method: 'PATCH', body: toEventPayload(draft) })
-  );
+  await request(`${API}/api/events/${id}`, { method: 'PATCH', body: toEventPayload(draft) });
+  // Read the event back so the caller keeps a complete record — the PATCH
+  // response has no attendeeCount, which would blank out the capacity meter.
+  return fetchEvent(id);
 }
 
 export async function deleteEvent(id) {
@@ -271,8 +348,24 @@ export async function updateOrg(id, draft) {
     description: draft.description || null,
     phone:       draft.phone || null,
     address:     draft.address || null,
+    // Blank means "no image": null clears it, '' would fail z.url().
+    bannerImg:   draft.bannerImg || null,
+    iconImg:     draft.iconImg || null,
   };
+  // Email is the organization's login credential, so only send it when it has
+  // actually been given a value — never blank it out by accident.
+  if (draft.email) body.email = draft.email.trim();
+
   return mapOrg(unwrap(await request(`${API}/api/orgs/${id}`, { method: 'PATCH', body })));
+}
+
+/** Closing an organization also removes its events (cascade in the database). */
+export async function deleteOrg(id) {
+  await request(`${API}/api/orgs/${id}`, { method: 'DELETE' });
+}
+
+export async function deleteUser(id) {
+  await request(`${API}/api/users/${id}`, { method: 'DELETE' });
 }
 
 export async function updateUser(id, draft) {
@@ -280,7 +373,11 @@ export async function updateUser(id, draft) {
     displayName: draft.displayName || null,
     profilePic:  draft.profilePic || null,
   };
-  if (draft.username) body.username = draft.username;
+  // Username and email are both login credentials, so only send them when they
+  // actually hold a value — never blank one out by accident.
+  if (draft.username) body.username = draft.username.trim();
+  if (draft.email)    body.email    = draft.email.trim();
+
   return mapUser(unwrap(await request(`${API}/api/users/${id}`, { method: 'PATCH', body })));
 }
 
