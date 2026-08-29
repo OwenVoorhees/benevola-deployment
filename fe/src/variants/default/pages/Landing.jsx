@@ -11,20 +11,19 @@ import { formatDate, formatDuration, shortAddress } from '../../../data/format';
    doing? The hero preview shows live openings rather than a stock mockup, so
    the proof and the product are the same object. */
 
-/* Every picture on this page is a real listing's cover photo, taken off the
-   same feed that fills the openings list — nothing is a stock shot and nothing
-   is a file we keep. So the page cannot show a photograph of work that is not
-   actually posted, and it restyles itself the day the seed data changes.
+/* The page's three editorial photographs. These are ours, in public/home/, not
+   listings' cover photos: the hero and the two bands have to look the same on
+   every visit and survive an empty database, which a picture borrowed from
+   whatever happens to be posted this week cannot do. The openings rail still
+   shows each listing's own photo, because there the picture IS the listing.
 
-   `nth` picks from the events that have a photo, so a listing posted without
-   one leaves a gap in the list rather than a hole in the page. The order the
-   API returns is by date and is stable, so the same slot keeps the same
-   picture between renders. Returns null while the feed is still loading,
-   which every caller below is written to handle. */
-function photoAt(events, nth) {
-  const withPhotos = events.filter(ev => ev.heroImage);
-  return withPhotos[nth % (withPhotos.length || 1)] ?? null;
-}
+   All three are public domain — see public/home/README.md for the sources and
+   why that matters. */
+const SHOT = {
+  hero:      '/home/hero.jpg',
+  community: '/home/community.jpg',
+  organize:  '/home/organize.jpg',
+};
 
 const Tick = () => (
   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -72,11 +71,6 @@ export default function Landing() {
   const revealing = useFirstReveal(!s.loading);
   const soon = s.events.slice(0, 6);
 
-  /* Three different listings, so the page does not show the same photograph
-     three times, and the one whose pin the showcase map drops. */
-  const heroPick  = photoAt(s.events, 0);
-  const localPick = photoAt(s.events, 1);
-  const orgPick   = photoAt(s.events, 2);
   /* May be null while the feed loads, or if nothing carries coordinates. The
      map is drawn either way — MapView falls back to Raleigh. */
   const pin = s.events.find(ev => ev.latitude != null && ev.longitude != null) ?? null;
@@ -104,8 +98,8 @@ export default function Landing() {
                 proves the openings are real. Both, in that order. */}
             <Photo
               className="def-hero-shot"
-              src={heroPick?.heroImage}
-              alt={heroPick ? `Volunteers at ${heroPick.title}` : ''}
+              src={SHOT.hero}
+              alt="Two volunteers harvesting vegetables from a community garden"
               eager
             />
 
@@ -143,17 +137,16 @@ export default function Landing() {
           <div className="def-intro">
             <Photo
               className="def-intro-shot"
-              src={localPick?.heroImage}
-              alt={localPick ? `Volunteers at ${localPick.title}` : ''}
+              src={SHOT.community}
+              alt="A large group of volunteers gathered around the rubbish they collected at a park clean-up"
             />
 
             <div className="def-intro-copy">
               <Eyebrow>How it works</Eyebrow>
               <h2 className="def-h2">Organizations post the work. You pick the shift.</h2>
               <p className="def-sub">
-                Benevola is where local organizations put the help they need and
-                volunteers find it — one list, real dates, real capacity, and no
-                phone tag in between.
+                Local organizations post the shifts they need filled. You pick
+                one that fits your week.
               </p>
 
               <div className="def-intro-steps">
@@ -248,8 +241,8 @@ export default function Landing() {
       {/* Photograph behind the whole band, under a flat brand scrim that the
           light ink is measured against — see .def-section--photo. */}
       <section
-        className={'def-section' + (orgPick ? ' def-section--photo' : ' def-section--tint')}
-        style={orgPick ? { backgroundImage: `url("${orgPick.heroImage}")` } : undefined}
+        className="def-section def-section--photo"
+        style={{ backgroundImage: `url("${SHOT.organize}")` }}
       >
         <div className="def-wrap">
           <div className="def-split">

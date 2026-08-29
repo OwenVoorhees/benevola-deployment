@@ -217,13 +217,13 @@
 
 /* ── Landing: the intro band ────────────────────────────────────────── */
 
-/* Picture left, pitch right. The photograph keeps the height it had as a
-   full-bleed band and gives up the width, which turns it from a backdrop into
-   a portrait — and means nothing has to be laid over it to stay readable. */
+/* Picture left, pitch right, at two thirds to one. The photograph is the
+   argument here and the words are the caption, so the split is lopsided on
+   purpose — and nothing has to be laid over the picture to stay readable. */
 .def-intro {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  gap: 52px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 40px;
   align-items: center;
 }
 
@@ -233,15 +233,16 @@
   max-height: 660px;
 }
 
-.def-intro-copy .def-h2 { max-width: 18ch; }
-.def-intro-copy .def-sub { max-width: 46ch; margin-bottom: 30px; }
+/* No max-width on either: the column is a third of the page and is already
+   the constraint. */
+.def-intro-copy .def-sub { margin-bottom: 26px; }
 
-/* Three across, one line of description each. */
+/* Stacked, not three across — three columns inside a third of the page would
+   be four words wide each. */
 .def-intro-steps {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
-  padding-top: 24px;
+  gap: 16px;
+  padding-top: 22px;
   border-top: 1px solid var(--def-line-2);
 }
 
@@ -258,6 +259,8 @@
 @media (max-width: 900px) {
   .def-intro { grid-template-columns: 1fr; gap: 34px; }
   .def-intro-shot { height: 46vh; min-height: 260px; }
+  /* Stacked, the column is the full page again, so the steps can spread. */
+  .def-intro-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 }
 @media (max-width: 560px) {
   .def-intro-steps { grid-template-columns: 1fr; gap: 16px; }
