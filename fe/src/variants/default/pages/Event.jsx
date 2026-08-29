@@ -188,18 +188,20 @@ export default function Event() {
             </Panel>
 
             {/* Where it is, once the address above has said what it is called.
-                Only when the record actually carries coordinates — an event
-                posted without a pin gets no empty map of the mid-Atlantic. */}
-            {event.latitude != null && event.longitude != null && (
-              <Panel>
-                <div className="def-map">
-                  <MapView lat={event.latitude} lng={event.longitude} />
-                </div>
-                {event.address && (
-                  <p className="def-map-note">{event.address}</p>
-                )}
-              </Panel>
-            )}
+                Always drawn: an event whose coordinates never got set falls
+                back to a map of Raleigh, which is where everything on this
+                deployment is. The pin is what goes missing in that case, not
+                the map, so nothing here claims a location it does not have. */}
+            <Panel>
+              <div className="def-map">
+                <MapView lat={event.latitude} lng={event.longitude} />
+              </div>
+              <p className="def-map-note">
+                {event.address
+                  ? event.address
+                  : 'No exact location on this listing yet — the map shows the area.'}
+              </p>
+            </Panel>
 
             {/* The roster is the organizer's view; the API serves it to them alone. */}
             {e.canEdit && (

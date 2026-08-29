@@ -90,6 +90,16 @@
      version instead. */
   --def-pri-text:  oklch(from var(--brand-primary) 0.48 c h);
 
+  /* The wash over a full-bleed photograph, where the picture has to keep
+     reading through it. Flat, like every other fill in this theme.
+
+     Its lightness is pinned near-black and brand-tinted rather than taken from
+     the palette, because the ink on top of it is always white: over the
+     brightest part of a photograph this still lands around 42% lightness,
+     which holds white at about 4.9:1. Raising the alpha buys contrast and
+     costs the photograph — 0.72 is where both survive. */
+  --def-scrim: oklch(from var(--brand-primary) 20% 0.03 h / 0.72);
+
   /* Decorative accents. Never the only carrier of meaning. */
   --def-sec:      var(--brand-secondary);
   --def-sec-soft: color-mix(in oklch, var(--brand-secondary) 13%, var(--def-panel));
@@ -147,6 +157,10 @@
   --def-pri-text:  oklch(from var(--brand-primary) 0.78 c h);
   --def-pri-soft:  color-mix(in oklch, var(--brand-primary) 26%, var(--def-ground));
   --def-pri-line:  color-mix(in oklch, var(--brand-primary) 44%, var(--def-ground));
+
+  /* Darker here: the photograph is already competing with a dark page rather
+     than a bright one, so the scrim has to work harder to separate from it. */
+  --def-scrim: oklch(from var(--brand-primary) 14% 0.03 h / 0.78);
 
   --def-sec:      oklch(from var(--brand-secondary) 0.76 c h);
   --def-sec-soft: color-mix(in oklch, var(--brand-secondary) 26%, var(--def-ground));

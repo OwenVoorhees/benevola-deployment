@@ -65,10 +65,12 @@ export default function Landing() {
   const soon = s.events.slice(0, 6);
 
   /* Three different listings, so the page does not show the same photograph
-     three times, and the one whose pin the closing map drops. */
+     three times, and the one whose pin the showcase map drops. */
   const heroPick  = photoAt(s.events, 0);
-  const orgPick   = photoAt(s.events, 1);
-  const closePick = photoAt(s.events, 2);
+  const localPick = photoAt(s.events, 1);
+  const orgPick   = photoAt(s.events, 2);
+  /* May be null while the feed loads, or if nothing carries coordinates. The
+     map is drawn either way — MapView falls back to Raleigh. */
   const pin = s.events.find(ev => ev.latitude != null && ev.longitude != null) ?? null;
 
   return (
@@ -125,25 +127,54 @@ export default function Landing() {
 
       </section>
 
-      <section className="def-section def-section--tint">
-        <div className="def-wrap">
-          <div className="def-section-head">
+      {/* The local band: one listing's photograph at close to full height, with
+          everything else sitting along its bottom edge. The three steps are the
+          same three as before, cut down — at this size the picture is doing the
+          talking and the words are captions under it. */}
+      <section
+        className="def-local"
+        style={localPick ? { backgroundImage: `url("${localPick.heroImage}")` } : undefined}
+      >
+        <div className="def-local-inner">
+          <div className="def-local-copy">
             <Eyebrow>How it works</Eyebrow>
-            <h2 className="def-h2">Three steps, no phone tag.</h2>
+            <h2 className="def-local-h2">Close enough to actually get to.</h2>
+            <p className="def-local-lede">
+              Everything on Benevola is around Raleigh — near enough to reach
+              after work or on a Saturday morning. Set how far you are willing
+              to travel and the list comes back the right size.
+            </p>
+
+            <div className="def-local-steps">
+              <div className="def-local-step">
+                <h3>Find a shift</h3>
+                <p>By cause, date and radius.</p>
+              </div>
+              <div className="def-local-step">
+                <h3>Sign on</h3>
+                <p>One click puts you on the roster.</p>
+              </div>
+              <div className="def-local-step">
+                <h3>Turn up</h3>
+                <p>The details wait in your profile.</p>
+              </div>
+            </div>
+
+            <div className="def-local-actions">
+              <Btn as={Link} to="/events">Browse openings near you</Btn>
+            </div>
           </div>
 
-          <div className="def-rail">
-            <div className="def-step">
-              <h3>Find a shift</h3>
-              <p>Search by cause, date and radius. Every listing carries a real date and a real address.</p>
+          {/* Sample map, bottom right, over the photograph. Not a link: Leaflet
+              puts the OpenStreetMap attribution inside the canvas as an anchor,
+              and anchors cannot nest. */}
+          <div className="def-local-map">
+            <div className="def-local-map-head">
+              {pin ? <Link to={`/events/${pin.id}`}>{pin.title}</Link> : <b>Around Raleigh</b>}
+              <span>{pin?.address ? shortAddress(pin.address) : 'Raleigh, North Carolina'}</span>
             </div>
-            <div className="def-step">
-              <h3>Sign on</h3>
-              <p>One click puts you on the roster. The organizer sees you immediately, and so do you.</p>
-            </div>
-            <div className="def-step">
-              <h3>Turn up</h3>
-              <p>Details stay in your profile. Change your mind and cancelling takes one click too.</p>
+            <div className="def-local-map-canvas">
+              <MapView lat={pin?.latitude} lng={pin?.longitude} zoom={12} />
             </div>
           </div>
         </div>
@@ -224,40 +255,6 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="def-section">
-        <div className="def-wrap">
-          <div className="def-close">
-            <div
-              className={'def-cta' + (closePick ? ' has-photo' : '')}
-              style={closePick ? { backgroundImage: `url("${closePick.heroImage}")` } : undefined}
-            >
-              <h2>Somebody nearby needs a hand this weekend.</h2>
-              <p>Free for volunteers. Free for the organizations doing the work.</p>
-              <Btn as={Link} to="/events">Find something to do</Btn>
-            </div>
-
-            {/* A real pin from a real listing, not a mock: the map is the same
-                one the event page draws, so what it promises here is what the
-                visitor gets when they click through. Hidden entirely until the
-                feed has given us somewhere to point at, because an empty map
-                of the mid-Atlantic sells nothing. */}
-            {pin && (
-              <div className="def-close-map">
-                <div className="def-close-map-head">
-                  <Link to={`/events/${pin.id}`}>{pin.title}</Link>
-                  {pin.address && <span>{shortAddress(pin.address)}</span>}
-                </div>
-                {/* The card is not itself a link: Leaflet renders the OpenStreetMap
-                    attribution as an anchor inside the canvas, and an anchor cannot
-                    be nested in another one. The title above is the way through. */}
-                <div className="def-close-map-canvas">
-                  <MapView lat={pin.latitude} lng={pin.longitude} zoom={13} />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
     </Shell>
   );
 }

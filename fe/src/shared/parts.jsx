@@ -243,7 +243,15 @@ const PIN = L.divIcon({
   iconAnchor: [12, 32],
 });
 
-const FALLBACK_CENTER = [39.5, -98.35];
+/* Downtown Raleigh, at a zoom that frames the city rather than the state.
+
+   Every seeded organization and event is in the Triangle, so a record that
+   arrives without coordinates — an older row, an address the geocoder could
+   not place — still gets a map of somewhere plausible instead of a grey
+   rectangle or the whole continental US. The pin is what is withheld in that
+   case, not the map: see MapView. */
+const FALLBACK_CENTER = [35.7796, -78.6382];
+const FALLBACK_ZOOM   = 11;
 
 function MapMover({ lat, lng }) {
   const map = useMap();
@@ -277,7 +285,7 @@ export function MapView({ lat, lng, zoom = 14 }) {
   return (
     <MapContainer
       center={has ? [lat, lng] : FALLBACK_CENTER}
-      zoom={has ? zoom : 4}
+      zoom={has ? zoom : FALLBACK_ZOOM}
       style={{ width: '100%', height: '100%' }}
       scrollWheelZoom={false}
       dragging={false}
@@ -311,7 +319,7 @@ export function MapPicker({ lat, lng, address, onPick }) {
       <div className="ui-map-canvas">
         <MapContainer
           center={has ? [lat, lng] : FALLBACK_CENTER}
-          zoom={has ? 14 : 4}
+          zoom={has ? 14 : FALLBACK_ZOOM}
           style={{ width: '100%', height: '100%' }}
           scrollWheelZoom={false}
         >

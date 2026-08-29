@@ -97,7 +97,6 @@
     transition: none;
   }
   .def-skel { animation: none; }
-  .def-ticker-track { animation: none; }
   /* Opacity is fine to keep; movement is not. These reveal instantly. */
   .def-fade-in, .def-stagger > *,
   .def-check circle, .def-check path,

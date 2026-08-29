@@ -183,47 +183,6 @@
 }
 .def-section--photo .def-btn:hover:not(:disabled) { background: var(--def-panel); }
 
-/* ── Landing: step rail ─────────────────────────────────────────────── */
-
-.def-section-head { max-width: 60ch; margin-bottom: 36px; }
-
-.def-rail {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-}
-
-/* Steps, not cards: a hairline rule connects them across the row so the
-   sequence reads as one process instead of three unrelated tiles. The order is
-   carried by the rule and the reading order, not by a printed number. */
-.def-step {
-  position: relative;
-  padding: 30px 30px 0 0;
-  border-top: 1px solid var(--def-line-2);
-}
-.def-step + .def-step { padding-left: 30px; }
-
-/* A tick on the rule marks where each step begins. */
-.def-step::after {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 34px;
-  height: 3px;
-  background: var(--def-pri);
-}
-.def-step + .def-step::after { left: 30px; }
-
-.def-step h3 { margin: 0 0 7px; font-size: 1.06rem; font-weight: 620; letter-spacing: -0.014em; }
-.def-step p  { margin: 0; color: var(--def-ink-2); font-size: 0.93rem; }
-
-@media (max-width: 820px) {
-  .def-rail { grid-template-columns: 1fr; }
-  .def-step, .def-step + .def-step { padding: 24px 0 0 0; }
-  .def-step + .def-step::after { left: 0; }
-}
-
 /* ── Landing: split feature ─────────────────────────────────────────── */
 
 .def-split {
@@ -244,109 +203,157 @@
 }
 .def-check svg { flex-shrink: 0; margin-top: 3px; color: var(--def-pri-text); }
 
-/* ── Landing: closing band ──────────────────────────────────────────── */
 
-/* The box and the map beside it. The map is the narrower column: it is the
-   evidence, not the argument. */
-.def-close {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  gap: 20px;
-  align-items: stretch;
-}
-@media (max-width: 880px) { .def-close { grid-template-columns: 1fr; } }
+/* ── Landing: the local band ────────────────────────────────────────── */
 
-.def-cta {
+/* One listing's photograph at close to full height, with everything else
+   sitting along its bottom edge. The section is the picture; the copy and the
+   map are captions on it.
+
+   Full-bleed rather than inside .def-wrap: a photograph this size that stops
+   short of the viewport edge reads as a large card, not as a scene. */
+.def-local {
   position: relative;
-  overflow: hidden;
-  border-radius: var(--def-r-lg);
-  padding: 56px 44px;
-  background: var(--def-pri);
-  color: var(--def-pri-ink);
+  isolation: isolate;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  /* Without this the button, as a flex item, stretches the full width of the
-     box instead of sizing to its label. */
-  align-items: flex-start;
-}
-
-/* Same treatment as .def-section--photo, and for the same reason: a flat scrim
-   over the picture so the ink is measured against one known colour. The
-   photograph itself is set inline, from the API. */
-.def-cta.has-photo {
+  align-items: flex-end;
+  min-height: 92vh;
+  padding: 88px 0 56px;
+  background-color: var(--def-pri);
   background-size: cover;
   background-position: center;
-  background-color: var(--def-pri);
+  color: var(--def-pri-ink);
 }
-.def-cta.has-photo::before {
+
+/* The wash the ink is measured against. Flat, like every fill in this theme —
+   see --def-scrim for why it sits at the alpha it does. */
+.def-local::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--def-pri);
-  opacity: 0.86;
+  z-index: -1;
+  background: var(--def-scrim);
 }
-.def-cta > * { position: relative; }
-.def-cta h2 {
-  margin: 0 0 10px;
-  font-size: clamp(1.6rem, 3.2vw, 2.15rem);
-  font-weight: 700;
-  letter-spacing: -0.028em;
-  max-width: 18ch;
-}
-.def-cta p { margin: 0 0 26px; max-width: 48ch; opacity: 0.86; font-size: 1rem; }
 
-.def-cta .def-btn {
+/* Copy left and middle, map bottom right, both anchored to the same baseline
+   so the band closes on one line rather than two ragged ones. */
+.def-local-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: 40px;
+  align-items: end;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 26px;
+}
+
+/* White, not --def-pri-ink: that token follows the primary and flips to
+   near-black in dark mode, where this scrim is darker still. The ink on a
+   photograph is white in both themes. */
+.def-local-copy { color: #fff; }
+.def-local-copy .def-eyebrow { color: #fff; opacity: 0.82; }
+
+.def-local-h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.9rem, 4vw, 2.9rem);
+  font-weight: 720;
+  letter-spacing: -0.032em;
+  line-height: 1.06;
+  max-width: 16ch;
+}
+
+.def-local-lede {
+  margin: 0 0 30px;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  max-width: 48ch;
+  opacity: 0.9;
+}
+
+/* Three across on the desktop band; the descriptions are one line each, so
+   they do not need more room than this. */
+.def-local-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  padding-top: 22px;
+  border-top: 1px solid oklch(100% 0 0 / 0.28);
+}
+
+.def-local-step h3 {
+  margin: 0 0 5px;
+  font-size: 0.98rem;
+  font-weight: 620;
+  letter-spacing: -0.012em;
+}
+.def-local-step p { margin: 0; font-size: 0.89rem; opacity: 0.82; }
+
+/* The one button on the band, inverted the way every button on a photograph
+   in this theme is: panel ground, brand ink. */
+.def-local-actions { margin-top: 30px; }
+.def-local-actions .def-btn {
   color: var(--def-pri-text);
   background: var(--def-panel);
-  box-shadow: 0 2px 10px oklch(0% 0 0 / 0.14);
+  box-shadow: 0 2px 10px oklch(0% 0 0 / 0.2);
 }
-.def-cta .def-btn:hover:not(:disabled) { background: var(--def-panel); }
+.def-local-actions .def-btn:hover:not(:disabled) { background: var(--def-panel); }
 
-@media (max-width: 600px) { .def-cta { padding: 40px 26px; } }
-
-/* ── Landing: the closing map ───────────────────────────────────────── */
-
-/* A card that happens to contain a map. MapView takes no input at all, so the
-   canvas never swallows a click or a scroll; the title in the head is the only
-   thing here you can press. */
-.def-close-map {
+/* The sample map. A card on the photograph, so it keeps the page's own
+   surface colours rather than the band's. */
+.def-local-map {
   display: flex;
   flex-direction: column;
-  min-height: 280px;
+  min-height: 260px;
   overflow: hidden;
-  border: 1px solid var(--def-line);
   border-radius: var(--def-r-lg);
   background: var(--def-panel);
-  box-shadow: var(--def-shadow);
+  box-shadow: var(--def-shadow-lg);
+  color: var(--def-ink);
 }
 
-.def-close-map-head {
+.def-local-map-head {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 14px 16px;
+  padding: 13px 16px;
   border-bottom: 1px solid var(--def-line);
 }
-.def-close-map-head a {
-  font-size: 0.94rem;
+.def-local-map-head a,
+.def-local-map-head b {
+  font-size: 0.92rem;
   font-weight: 620;
   letter-spacing: -0.012em;
   color: var(--def-ink);
   text-decoration: none;
 }
-.def-close-map-head a:hover { color: var(--def-pri-text); }
-.def-close-map-head span { font-size: 0.83rem; color: var(--def-ink-2); }
+.def-local-map-head a:hover { color: var(--def-pri-text); }
+.def-local-map-head span { font-size: 0.82rem; color: var(--def-ink-2); }
 
 /* Leaflet sizes itself to its container, so the container needs a resolved
-   height: flex-grow against the card's own min-height gives it one. */
-.def-close-map-canvas { display: block; flex: 1; min-height: 200px; }
+   height: flex-grow against the card's own min-height gives it one. Leaflet
+   also paints its panes and controls at z-indices in the hundreds, which is
+   enough to climb over the sticky header — a stacking context keeps them in
+   the box. Same reason .def-map has one. */
+.def-local-map-canvas {
+  display: block;
+  flex: 1;
+  min-height: 190px;
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+}
 
-/* Leaflet paints its own controls and panes at z-indices in the thousands,
-   which is enough to sit over the sticky header. Nothing here is interactive,
-   so a stacking context of its own keeps it in its box. */
-.def-close-map-canvas,
-.def-map { position: relative; isolation: isolate; z-index: 0; }
+/* Stacked, the map goes under the copy rather than beside it, and the band
+   stops trying to fill a phone's whole screen. */
+@media (max-width: 900px) {
+  .def-local { min-height: 0; padding: 64px 0 48px; }
+  .def-local-inner { grid-template-columns: 1fr; gap: 32px; }
+  .def-local-map { min-height: 240px; }
+}
+@media (max-width: 560px) {
+  .def-local-steps { grid-template-columns: 1fr; gap: 16px; }
+}
 
 /* ── The event page's map ───────────────────────────────────────────── */
 
@@ -354,6 +361,9 @@
   height: 220px;
   overflow: hidden;
   border-radius: var(--def-r) var(--def-r) 0 0;
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
 }
 .def-map-note {
   margin: 0;
