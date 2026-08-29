@@ -185,14 +185,10 @@
 .def-section--photo .def-panel { color: var(--def-ink); }
 .def-section--photo .def-panel .def-muted { color: var(--def-ink-3); }
 
-/* The one button on this band sits on the photograph, so it inverts the way
-   the closing box's does: panel ground, brand ink. */
-.def-section--photo .def-btn {
-  color: var(--def-pri-text);
-  background: var(--def-panel);
-  box-shadow: 0 2px 10px oklch(0% 0 0 / 0.14);
-}
-.def-section--photo .def-btn:hover:not(:disabled) { background: var(--def-panel); }
+/* The button on this band keeps the standard fill rather than inverting to a
+   white chip: brand ground, --def-pri-ink on top, the same as every other
+   primary action on the site. It has its own solid background, so it does not
+   need the photograph's help to be legible. */
 
 /* ── Landing: split feature ─────────────────────────────────────────── */
 

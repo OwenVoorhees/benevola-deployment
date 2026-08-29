@@ -143,7 +143,9 @@ export default function Landing() {
 
             <div className="def-intro-copy">
               <Eyebrow>How it works</Eyebrow>
-              <h2 className="def-h2">Organizations post the work. You pick the shift.</h2>
+              {/* Hard break: the two halves are a pair, and letting the column
+                  width decide where they split reads as an accident. */}
+              <h2 className="def-h2">Organizations post the work.<br />You pick the shift.</h2>
               <p className="def-sub">
                 Local organizations post the shifts they need filled. You pick
                 one that fits your week.
