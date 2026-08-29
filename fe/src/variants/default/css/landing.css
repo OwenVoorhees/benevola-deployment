@@ -142,37 +142,48 @@
 
    The photograph is set inline by the page, because the URL comes off the API.
    Everything that makes it readable lives here: cover-positioned, then a FLAT
-   scrim of the primary over it — flat, not a gradient, so the ink is measured
-   against one colour rather than against whichever end of a ramp it lands on.
-   At 0.88 the picture reads as texture and tone; white on the primary is
-   5.2:1, and the photograph cannot lift it above that. */
+   scrim over it — flat, not a gradient, so the ink is measured against one
+   colour rather than against whichever end of a ramp it lands on.
+
+   The scrim is black rather than the brand green: green over a photograph
+   tints whatever it is a photograph of, and at the alpha this needs to hold
+   white text that reading is unavoidable. Black takes the picture's colour
+   down without replacing it. At 0.62 over even the brightest part of a shot
+   this lands near 38% lightness, which holds white at about 5.6:1. */
 .def-section--photo {
   position: relative;
   isolation: isolate;
-  background-color: var(--def-pri);
+  background-color: oklch(22% 0 0);
   background-size: cover;
   background-position: center;
-  color: var(--def-pri-ink);
+  color: #fff;
 }
 .def-section--photo::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--def-pri);
-  opacity: 0.88;
+  background: oklch(16% 0 0);
+  opacity: 0.62;
 }
 
-/* The band's own ink, which would otherwise be the page's near-black. The
-   floating panel inside it keeps its own colours: it is a white card on a
-   photograph, which is the contrast the section is built around. */
+/* The band's ink is white in both themes: it sits on a photograph, not on the
+   page, so it does not follow --def-pri-ink (which flips to near-black in dark
+   mode along with the primary). */
 .def-section--photo .def-h2,
 .def-section--photo .def-sub,
-.def-section--photo .def-check li { color: var(--def-pri-ink); }
+.def-section--photo .def-check li { color: #fff; }
 .def-section--photo .def-sub,
 .def-section--photo .def-check li { opacity: 0.9; }
-.def-section--photo .def-check svg { color: var(--def-pri-ink); }
-.def-section--photo .def-eyebrow { color: var(--def-pri-ink); opacity: 0.78; }
+.def-section--photo .def-check svg { color: #fff; }
+.def-section--photo .def-eyebrow { color: #fff; opacity: 0.82; }
+
+/* The band's white ink is inherited, so anything with its own ground has to
+   take it back — a panel is a light card sitting ON the photograph, and its
+   text was coming out white on white. Everything inside returns to page ink
+   and its own tokens. */
+.def-section--photo .def-panel { color: var(--def-ink); }
+.def-section--photo .def-panel .def-muted { color: var(--def-ink-3); }
 
 /* The one button on this band sits on the photograph, so it inverts the way
    the closing box's does: panel ground, brand ink. */
@@ -204,37 +215,29 @@
 .def-check svg { flex-shrink: 0; margin-top: 3px; color: var(--def-pri-text); }
 
 
-/* ── Landing: the local band ────────────────────────────────────────── */
+/* ── Landing: the intro band ────────────────────────────────────────── */
 
-/* The photograph, full width and nothing over it. Tall on purpose — it is the
-   one picture on the page that is allowed to be the whole view — but it stops
-   short of the viewport so the section under it shows an edge and invites the
-   scroll. */
-.def-local-shot {
-  height: 78vh;
-  min-height: 320px;
-  max-height: 780px;
-  border-radius: 0;
-}
-
-@media (max-width: 900px) {
-  .def-local-shot { height: 52vh; min-height: 260px; }
-}
-
-/* Copy left and middle, map right. */
-.def-local {
+/* Picture left, pitch right. The photograph keeps the height it had as a
+   full-bleed band and gives up the width, which turns it from a backdrop into
+   a portrait — and means nothing has to be laid over it to stay readable. */
+.def-intro {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
-  gap: 44px;
-  align-items: start;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 52px;
+  align-items: center;
 }
 
-.def-local-copy .def-h2 { max-width: 16ch; }
-.def-local-copy .def-sub { max-width: 48ch; margin-bottom: 30px; }
+.def-intro-shot {
+  height: 78vh;
+  min-height: 340px;
+  max-height: 660px;
+}
 
-/* Three across; the descriptions are one line each, so they need no more room
-   than this. */
-.def-local-steps {
+.def-intro-copy .def-h2 { max-width: 18ch; }
+.def-intro-copy .def-sub { max-width: 46ch; margin-bottom: 30px; }
+
+/* Three across, one line of description each. */
+.def-intro-steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
@@ -242,17 +245,40 @@
   border-top: 1px solid var(--def-line-2);
 }
 
-.def-local-step h3 {
+.def-intro-step h3 {
   margin: 0 0 5px;
   font-size: 0.98rem;
   font-weight: 620;
   letter-spacing: -0.012em;
 }
-.def-local-step p { margin: 0; font-size: 0.89rem; color: var(--def-ink-2); }
+.def-intro-step p { margin: 0; font-size: 0.89rem; color: var(--def-ink-2); }
 
-.def-local-actions { margin-top: 30px; }
+.def-intro-actions { margin-top: 30px; }
 
-/* The sample map. */
+@media (max-width: 900px) {
+  .def-intro { grid-template-columns: 1fr; gap: 34px; }
+  .def-intro-shot { height: 46vh; min-height: 260px; }
+}
+@media (max-width: 560px) {
+  .def-intro-steps { grid-template-columns: 1fr; gap: 16px; }
+}
+
+/* ── Landing: the local band ────────────────────────────────────────── */
+
+/* Plain ground, no photograph: text left, the sample map right. Shorter than
+   a full section — it makes one point and shows one map. */
+.def-section--short { padding: 56px 0; }
+
+.def-local {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 44px;
+  align-items: center;
+}
+
+.def-local-copy .def-h2 { max-width: 16ch; }
+.def-local-copy .def-sub { max-width: 46ch; margin-bottom: 22px; }
+
 .def-local-map {
   overflow: hidden;
   border: 1px solid var(--def-line);
@@ -296,13 +322,70 @@
   isolation: isolate;
   z-index: 0;
 }
-.def-local-map-canvas { height: 260px; }
+.def-local-map-canvas { height: 280px; }
 
 @media (max-width: 900px) {
-  .def-local { grid-template-columns: 1fr; gap: 34px; }
+  .def-local { grid-template-columns: 1fr; gap: 30px; }
+  .def-local-map-canvas { height: 240px; }
 }
+
+/* ── Landing: the openings rail ─────────────────────────────────────── */
+
+/* Sideways rather than wrapped. The cards are wide enough that a grid would
+   fit two to a row and bury the rest; a rail shows the row continuing off the
+   edge, which says "there are more" without printing a number. */
+.def-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 320px);
+  gap: 20px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  /* Room for the cards' shadow, and for the focus ring on a keyboard tab,
+     both of which a clipped overflow box would cut off. */
+  padding: 4px 4px 18px;
+  margin: 0 -4px;
+  scrollbar-width: thin;
+}
+
+.def-card {
+  scroll-snap-align: start;
+  display: grid;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.def-card-shot {
+  aspect-ratio: 4 / 3;
+  margin-bottom: 10px;
+  box-shadow: var(--def-shadow);
+  transition: box-shadow 240ms var(--def-ease), transform 240ms var(--def-ease);
+}
+.def-card:hover .def-card-shot {
+  transform: translateY(-3px);
+  box-shadow: var(--def-shadow-lg);
+}
+
+.def-card-date {
+  font-size: 0.78rem;
+  font-weight: 620;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--def-pri-text);
+}
+
+.def-card-title {
+  font-size: 1.02rem;
+  font-weight: 620;
+  letter-spacing: -0.016em;
+  line-height: 1.3;
+}
+.def-card:hover .def-card-title { color: var(--def-pri-text); }
+
 @media (max-width: 560px) {
-  .def-local-steps { grid-template-columns: 1fr; gap: 16px; }
+  .def-rail { grid-auto-columns: minmax(240px, 78vw); }
 }
 
 /* ── The event page's map ───────────────────────────────────────────── */

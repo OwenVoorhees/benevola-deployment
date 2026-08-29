@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Shell, {
-  ArrowLink, Btn, Chip, DateBlock, Eyebrow, Photo, State, Skeleton, useFirstReveal,
+  ArrowLink, Btn, DateBlock, Eyebrow, Photo, State, Skeleton, useFirstReveal,
 } from '../parts';
 import { MapView } from '../../../shared/parts';
 import { useEventsSearch } from '../../../data/hooks';
-import { formatDuration, shortAddress } from '../../../data/format';
+import { formatDate, formatDuration, shortAddress } from '../../../data/format';
 
 /* The landing page answers one question: is there anything near me worth
    doing? The hero preview shows live openings rather than a stock mockup, so
@@ -32,14 +32,13 @@ const Tick = () => (
   </svg>
 );
 
-function Row({ event, orgName, compact, index = 0 }) {
+/* The tight row inside the hero's preview card — the only list shape left on
+   this page, now that the openings below are cards. */
+function Row({ event, orgName }) {
   return (
-    <Link className="def-item" to={`/events/${event.id}`} style={{ '--i': index }}>
+    <Link className="def-item" to={`/events/${event.id}`}>
       <span className="def-lead">
         <DateBlock iso={event.date} />
-        {!compact && event.heroImage && (
-          <img className="def-thumb" src={event.heroImage} alt="" loading="lazy" />
-        )}
       </span>
       <span className="def-item-body">
         <span className="def-item-title">{event.title}</span>
@@ -49,11 +48,20 @@ function Row({ event, orgName, compact, index = 0 }) {
           <span>{formatDuration(event.duration)}</span>
         </span>
       </span>
-      {!compact && (
-        <span className="def-chiprow">
-          {event.tags.slice(0, 2).map(t => <Chip key={t}>{t.replace(/-/g, ' ')}</Chip>)}
-        </span>
-      )}
+    </Link>
+  );
+}
+
+/* One opening, as a picture. Everything the old row carried except the date and
+   the title has come off: at this size the photograph is doing that work, and a
+   card with six facts on it stops being something you scan. */
+function Card({ event, index = 0 }) {
+  return (
+    /* --i drives the stagger delay on first reveal. See .def-stagger. */
+    <Link className="def-card" to={`/events/${event.id}`} style={{ '--i': index }}>
+      <Photo className="def-card-shot" src={event.heroImage} alt="" />
+      <span className="def-card-date">{event.date ? formatDate(event.date) : 'Date to confirm'}</span>
+      <span className="def-card-title">{event.title}</span>
     </Link>
   );
 }
@@ -117,7 +125,7 @@ export default function Landing() {
                   </p>
                 ) : (
                   soon.slice(0, 3).map(ev => (
-                    <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} compact />
+                    <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} />
                   ))
                 )}
               </div>
@@ -127,45 +135,63 @@ export default function Landing() {
 
       </section>
 
-      {/* The photograph, plain and full width. No wash over it and nothing set
-          on top: what it has to do is be looked at. Everything it introduces
-          is in the section under it. */}
-      <Photo
-        className="def-local-shot"
-        src={localPick?.heroImage}
-        alt={localPick ? `Volunteers at ${localPick.title}` : ''}
-      />
+      {/* What the site is: a tall photograph on the left, the pitch on the
+          right. The picture is plain — nothing is set over it — so it is
+          narrower than the page rather than full bleed. */}
+      <section className="def-section">
+        <div className="def-wrap">
+          <div className="def-intro">
+            <Photo
+              className="def-intro-shot"
+              src={localPick?.heroImage}
+              alt={localPick ? `Volunteers at ${localPick.title}` : ''}
+            />
 
-      <section className="def-section def-section--tint">
+            <div className="def-intro-copy">
+              <Eyebrow>How it works</Eyebrow>
+              <h2 className="def-h2">Organizations post the work. You pick the shift.</h2>
+              <p className="def-sub">
+                Benevola is where local organizations put the help they need and
+                volunteers find it — one list, real dates, real capacity, and no
+                phone tag in between.
+              </p>
+
+              <div className="def-intro-steps">
+                <div className="def-intro-step">
+                  <h3>Find a shift</h3>
+                  <p>By cause, date and radius.</p>
+                </div>
+                <div className="def-intro-step">
+                  <h3>Sign on</h3>
+                  <p>One click puts you on the roster.</p>
+                </div>
+                <div className="def-intro-step">
+                  <h3>Turn up</h3>
+                  <p>The details wait in your profile.</p>
+                </div>
+              </div>
+
+              <div className="def-intro-actions">
+                <Btn as={Link} to="/events">Browse openings</Btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Local: plain ground, no photograph. Text left, the sample map right. */}
+      <section className="def-section def-section--tint def-section--short">
         <div className="def-wrap">
           <div className="def-local">
             <div className="def-local-copy">
-              <Eyebrow>How it works</Eyebrow>
+              <Eyebrow>Nearby</Eyebrow>
               <h2 className="def-h2">Close enough to actually get to.</h2>
               <p className="def-sub">
                 Everything on Benevola is around Raleigh — near enough to reach
                 after work or on a Saturday morning. Set how far you are willing
                 to travel and the list comes back the right size.
               </p>
-
-              <div className="def-local-steps">
-                <div className="def-local-step">
-                  <h3>Find a shift</h3>
-                  <p>By cause, date and radius.</p>
-                </div>
-                <div className="def-local-step">
-                  <h3>Sign on</h3>
-                  <p>One click puts you on the roster.</p>
-                </div>
-                <div className="def-local-step">
-                  <h3>Turn up</h3>
-                  <p>The details wait in your profile.</p>
-                </div>
-              </div>
-
-              <div className="def-local-actions">
-                <Btn as={Link} to="/events">Browse openings near you</Btn>
-              </div>
+              <ArrowLink to="/events">See what is near you</ArrowLink>
             </div>
 
             {/* Not a link: Leaflet puts the OpenStreetMap attribution inside the
@@ -203,9 +229,12 @@ export default function Landing() {
             </State>
           ) : (
             <>
-              <div className={'def-list def-fade-in' + (revealing ? ' def-stagger' : '')}>
+              {/* Scrolls sideways rather than wrapping: the cards are wide
+                  enough that a grid would put two on a row and bury the rest,
+                  and a rail says "there are more" without a count. */}
+              <div className={'def-rail def-fade-in' + (revealing ? ' def-stagger' : '')}>
                 {soon.map((ev, i) => (
-                  <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} index={i} />
+                  <Card key={ev.id} event={ev} index={i} />
                 ))}
               </div>
               <div style={{ marginTop: 26 }}>
