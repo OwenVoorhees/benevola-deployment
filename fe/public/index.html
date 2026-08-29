@@ -18,14 +18,17 @@
         } catch (e) { el.setAttribute('data-theme', 'light'); }
       })();
     </script>
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <!-- SVG first: browsers that support it prefer it and it stays crisp at any
+         size. favicon.ico is the fallback for those that do not. -->
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="any" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#157C4F" />
     <meta
       name="description"
       content="Find local volunteering shifts with a date, a place and a capacity you can count on."
     />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
