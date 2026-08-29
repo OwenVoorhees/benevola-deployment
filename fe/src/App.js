@@ -1,34 +1,43 @@
-// App.js
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import LandingPage from '../src/Pages/LandingPage';
-import OppListPage from './Pages/OppListPage';
-import NotFoundPage from '../src/Pages/NotFoundPage';
-import CreateEventPage from '../src/Pages/CreateEventPage';
-import BrowseOrgsPage from './Pages/BrowseOrgsPage';
-import MyProfilePage from './Pages/MyProfilePage';
-import OrgProfilePage from './Pages/OrgProfilePage';
-import UserProfilePage from './Pages/UserProfilePage';
-import EventPage from './Pages/EventPage';
-import LoginPage from './Pages/LoginPage';
-import OurMissionPage from './Pages/OurMissionPage';
+import ScrollToTop from './Components/ScrollToTop';
+import RequireAuth from './Components/RequireAuth';
+import { AuthProvider } from './context/AuthContext';
+import { DesignProvider } from './design/DesignContext';
+import Surface from './design/Surface';
+import './styles/App.css';
+
+/* Routes name a surface; the design registry decides which component renders
+   it. The site is locked to the 'default' design in src/design/config.js. */
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/our-mission" element={<OurMissionPage />} />
-        <Route path="/opp-list" element={<OppListPage />} />
-        <Route path="/create-event" element={<CreateEventPage />} />
-        <Route path="/organizations" element={<BrowseOrgsPage />} />
-        <Route path="/my-profile" element={<MyProfilePage />} />
-        <Route path="/orgs/profile/:id" element={<OrgProfilePage />} />
-        <Route path="/users/profile/:id" element={<UserProfilePage />} />
-        <Route path="/event/:id" element={<EventPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <DesignProvider>
+        <Router>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/"                  element={<Surface name="Landing" />} />
+            <Route path="/login"             element={<Surface name="Login" />} />
+            <Route path="/signup"            element={<Surface name="Signup" />} />
+            <Route path="/about"             element={<Surface name="About" />} />
+            <Route path="/events"            element={<Surface name="Events" />} />
+            <Route path="/events/:id"        element={<Surface name="Event" />} />
+            <Route path="/organizations"     element={<Surface name="Orgs" />} />
+            <Route path="/organizations/:id" element={<Surface name="Org" />} />
+            <Route
+              path="/organizations/:id/events/new"
+              element={
+                <RequireAuth role="organization">
+                  <Surface name="EventNew" />
+                </RequireAuth>
+              }
+            />
+            <Route path="/volunteer/:id"     element={<Surface name="Volunteer" />} />
+            <Route path="*"                  element={<Surface name="NotFound" />} />
+          </Routes>
+        </Router>
+      </DesignProvider>
+    </AuthProvider>
   );
 }
 

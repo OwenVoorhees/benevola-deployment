@@ -18,7 +18,7 @@ const eventValidation = z.object({
     address: z.string().max(150).nullable(),
     latitude: z.coerce.number().min(-90).max(90),
     longitude: z.coerce.number().min(-180).max(180),
-    image: z.url().nullable()
+    coverPhoto: z.url().nullable()
 }).strict();
 
 const updateEventValidation = z.object({
@@ -31,7 +31,7 @@ const updateEventValidation = z.object({
     address: z.string().max(150).nullable().optional(),
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
-    image: z.url().nullable().optional(),
+    coverPhoto: z.url().nullable().optional(),
 })
     .strict()
     .refine((obj) => Object.keys(obj).length > 0, {
@@ -54,6 +54,9 @@ const tagsSchema = z.preprocess((val) => {
 
 const EventsQuerySchema = z.object({
     tags: tagsSchema,
+
+    // free-text keyword; matches event title/description/address and tag names
+    q: z.string().trim().min(1).max(100).optional(),
 
     date: dateYYYYMMDD.optional(),
     beforeDate: dateYYYYMMDD.optional(),
@@ -103,10 +106,6 @@ const EventsQuerySchema = z.object({
     }
 });
 
-const searchQueryValidation = z.object({
-    q: z.string().min(1),
-})
-
 const attendeeBodyValidation = z.object({
     userId: z.coerce.number().int().positive(),
 }).strict();
@@ -120,12 +119,25 @@ const addTagValidation = z.object({
     slug: z.string().regex(/^[a-z0-9-]+$/)
 }).strict();
 
+/* Gallery, from development. The presigned-URL validator that shipped
+   alongside these is gone with the route it served: uploads are signed at
+   /api/uploads/sign instead. */
+const galleryImageParamValidation = z.object({
+    eid: z.coerce.number().int().positive(),
+    imageId: z.coerce.number().int().positive(),
+});
+
+const galleryBodyValidation = z.object({
+    urls: z.array(z.url()).min(1).max(10),
+}).strict();
+
 module.exports = { 
     eventValidation, 
     updateEventValidation, 
     eventParamValidation, 
-    EventsQuerySchema, 
-    searchQueryValidation,
+    EventsQuerySchema,
+    galleryImageParamValidation,
+    galleryBodyValidation,
     attendeeBodyValidation,
     attendeeParamValidation,
     addTagValidation

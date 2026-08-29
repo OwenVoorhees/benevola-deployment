@@ -2,12 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      /* Stamp the design and theme before React boots, so the first frame is
+         not painted in the wrong mode. The colours are deliberately not set
+         here: they live in variants/default/css/tokens.css, and a stylesheet is
+         render-blocking, so it lands before the first paint anyway. Setting
+         them here too would put an inline style on :root that quietly beat the
+         stylesheet. */
+      (function() {
+        var el = document.documentElement;
+        el.setAttribute('data-design', 'default');
+        try {
+          var t = localStorage.getItem('theme');
+          el.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        } catch (e) { el.setAttribute('data-theme', 'light'); }
+      })();
+    </script>
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#157C4F" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Find local volunteering shifts with a date, a place and a capacity you can count on."
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
