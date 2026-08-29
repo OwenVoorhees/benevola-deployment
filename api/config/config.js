@@ -27,6 +27,13 @@ const sslFor = (url) =>
 const postgres = (url) => ({
   url,
   dialect: "postgres",
+  // Sequelize loads its driver with require(variable) — see _loadDialectModule
+  // in dialects/abstract/connection-manager.js. Vercel decides what to bundle
+  // by tracing require() calls statically, cannot see "pg" through that
+  // variable, and ships a function that dies at boot with "Please install pg
+  // package manually". Naming the module here pins it into the bundle and
+  // hands Sequelize the driver directly, skipping the lookup entirely.
+  dialectModule: require("pg"),
   dialectOptions: { ssl: sslFor(url) },
   // Serverless invocations are short and may run many at once, so each holds
   // as few connections as it can. Use Neon's *pooled* host (the one with
