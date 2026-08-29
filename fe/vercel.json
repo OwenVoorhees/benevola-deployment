@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE-WITH-YOUR-API-PROJECT.vercel.app/api/:path*"
+      "destination": "https://benevola-deployment.vercel.app/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
