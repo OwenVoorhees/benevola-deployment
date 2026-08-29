@@ -2,12 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      /* Stamp the design and theme before React boots, so the first frame is
+         not painted in the wrong mode. The colours are deliberately not set
+         here: they live in variants/default/css/tokens.css, and a stylesheet is
+         render-blocking, so it lands before the first paint anyway. Setting
+         them here too would put an inline style on :root that quietly beat the
+         stylesheet. */
+      (function() {
+        var el = document.documentElement;
+        el.setAttribute('data-design', 'default');
+        try {
+          var t = localStorage.getItem('theme');
+          el.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        } catch (e) { el.setAttribute('data-theme', 'light'); }
+      })();
+    </script>
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#157C4F" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Find local volunteering shifts with a date, a place and a capacity you can count on."
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
@@ -17,7 +33,7 @@
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
@@ -27,7 +43,7 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Benevola Landing Page</title>
+    <title>Benevola</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -10,60 +10,39 @@ const {
     eventParamValidation,
     updateEventValidation,
     EventsQuerySchema,
-    searchQueryValidation,
     galleryImageParamValidation,
-    imageUploadUrlQueryValidation,
     galleryBodyValidation,
 } = require("../schemas/event.schema");
 const { createTagValidation, tagSlugValidation } = require('../schemas/tag.schema');
 const validate = require("../middleware/validate");
 const load = require("../middleware/load");
 const parseTags = require("../middleware/parseTags");
-const { generateUploadUrl, deleteFromS3 } = require("../services/s3");
-const { searchEvents, indexEvent, removeEvent } = require('../services/searchService');
+const { deleteObject } = require("../services/storage");
 const { getEvents } = require("../services/buildEventQuery");
 const authenticate = require("../middleware/authenticate");
-const { requireUser, requireOrg, verifyOwnership } = require("../middleware/authorization");
+const { requireUser, requireOrg, requireAdmin, verifyOwnership } = require("../middleware/authorization");
 
-// GET events
-router.get('/',
-    validate({ query: EventsQuerySchema }),
-    async (req, res, next) => {
-        const query = req.validatedQuery
+// GET events. `/search` is the same endpoint under another name: a keyword is
+// just one more filter, so both share a handler. Keeping them together is what
+// lets a keyword combine with tags, dates and location instead of replacing
+// them, and lets both report a `total` the frontend can paginate against.
+const listEvents = async (req, res, next) => {
+    try {
+        const { rows, total } = await getEvents(req.validatedQuery);
 
-        try {
-            const events = await getEvents(query);
-
-            return res.status(200).json({
-                message: "success",
-                results: events.length,
-                data: events
-            })
-        } catch (err) {
-            next(err);
-        }
+        return res.status(200).json({
+            message: "success",
+            results: rows.length,
+            total,
+            data: rows
+        })
+    } catch (err) {
+        next(err);
     }
-);
+};
 
-// SEARCH events
-router.get('/search',
-    validate({ query: EventsQuerySchema }),
-    async (req, res, next) => {
-        const query = req.validatedQuery;
-
-        try {
-            const events = await getEvents(query);
-
-            return res.status(200).json({
-                message: "success",
-                results: events.length,
-                data: events
-            });
-        } catch (err) {
-            next(err);
-        }
-    }
-);
+router.get('/', validate({ query: EventsQuerySchema }), listEvents);
+router.get('/search', validate({ query: EventsQuerySchema }), listEvents);
 
 // GET list of tags
 router.get('/tags', async (req, res, next) => {
@@ -81,7 +60,11 @@ router.get('/tags', async (req, res, next) => {
 });
 
 // ADD a tag
+// Tags are a shared vocabulary used across every organization's events, so
+// they are not something any single account gets to edit.
 router.post('/tags',
+    authenticate,
+    requireAdmin,
     validate({ body: createTagValidation }),
     async (req, res, next) => {
         try {
@@ -98,7 +81,11 @@ router.post('/tags',
 );
 
 // DELETE tag by slug
+// Deleting a tag detaches it from every event already using it, which is
+// exactly why this cannot be left open.
 router.delete('/tags/:slug',
+    authenticate,
+    requireAdmin,
     validate({ params: tagSlugValidation }),
     load(Tag, {
         identifier: "slug",
@@ -127,11 +114,19 @@ router.get('/:eid',
         reqKey: "event",
         include: [{ model: Tag, through: { attributes: [] } }]
     }),
-    async (req, res) => {
-        return res.status(200).json({
-            message: "success",
-            data: req.event
-        });
+    async (req, res, next) => {
+        try {
+            // Who is attending is private to the organizer, but how many are
+            // attending is not — the public event page needs it for spots left.
+            const attendeeCount = await req.event.countUsers();
+
+            return res.status(200).json({
+                message: "success",
+                data: { ...req.event.toJSON(), attendeeCount },
+            });
+        } catch (err) {
+            next(err);
+        }
     }
 );
 
@@ -149,14 +144,14 @@ router.put('/:eid',
         reqKey: "event"
     }),
     parseTags(Tag, false),
-    verifyOwnership(req => req.org.organizationId),
+    verifyOwnership(req => req.event.organizationId),
     async (req, res, next) => {
         const event = req.event;
         const body = req.validatedBody;
 
         try {
             if (event.coverPhoto && body.coverPhoto !== undefined && body.coverPhoto !== event.coverPhoto) {
-                await deleteFromS3(event.coverPhoto);
+                await deleteObject(event.coverPhoto);
             }
 
             const updated = await sequelize.transaction(async (t) => {
@@ -167,7 +162,6 @@ router.put('/:eid',
                 return { event, tags };
             });
 
-            await indexEvent(updated.event);
             return res.status(200).json({
                 message: "success",
                 data: updated
@@ -192,14 +186,14 @@ router.patch('/:eid',
         reqKey: "event"
     }),
     parseTags(Tag),
-    verifyOwnership(req => req.org.organizationId),
+    verifyOwnership(req => req.event.organizationId),
     async (req, res, next) => {
         const event = req.event;
         const body = req.validatedBody;
 
         try {
             if (event.coverPhoto && body.coverPhoto !== undefined && body.coverPhoto !== event.coverPhoto) {
-                await deleteFromS3(event.coverPhoto);
+                await deleteObject(event.coverPhoto);
             }
 
             const updated = await sequelize.transaction(async (t) => {
@@ -207,14 +201,13 @@ router.patch('/:eid',
                     event.set(body);
                     await event.save({ transaction: t });
                 }
-                if (tags !== undefined){
+                if (req.tags !== undefined){
                     await event.setTags(req.parsedTags, { transaction: t });
                 }
                 const tags = await event.getTags({ transaction: t });
                 return { event, tags };
             });
 
-            await indexEvent(updated.event);
             return res.status(200).json({
                 message: "success",
                 data: updated
@@ -240,7 +233,6 @@ router.delete('/:eid',
         const event = req.event;
 
         try {
-            await removeEvent(event.id);
             await event.destroy();
             return res.status(204).end();
         } catch (err) {
@@ -249,8 +241,13 @@ router.delete('/:eid',
     }
 );
 
-// GET event attendees
+// GET event attendees (the roster)
+// Restricted to the organization that owns the event: this returns volunteer
+// names and photos, which should not be readable by the whole internet. The
+// public event page uses `attendeeCount` from GET /:eid instead.
 router.get('/:eid/attendees',
+    authenticate,
+    requireOrg,
     validate({
         params: eventParamValidation,
     }),
@@ -264,13 +261,11 @@ router.get('/:eid/attendees',
             through: { attributes: [] }
         }]
     }),
+    verifyOwnership(req => req.event.organizationId),
     async (req, res) => {
-        const event = req.event;
-
-        console.log(event);
         return res.status(200).json({
             message: "success",
-            data: event.Users
+            data: req.event.Users
         });
     }
 );
@@ -290,6 +285,17 @@ router.post('/:eid/attendees',
         const user = req.user;
 
         try {
+            // Capacity has to hold here, not just in the UI, or "0 spots left"
+            // means nothing. Events with no capacity set are unlimited.
+            if (event.capacity != null) {
+                const attending = await event.countUsers();
+                const already = await event.hasUser(user.id);
+
+                if (!already && attending >= event.capacity) {
+                    return res.status(409).json({ message: "This event is full" });
+                }
+            }
+
             await event.addUser(user.id);
             return res.status(201).json({ message: "joined" });
         } catch (err) {
@@ -301,47 +307,15 @@ router.post('/:eid/attendees',
     }
 );
 
-// GET presigned upload URL(s) for cover photo or gallery
-router.get('/:eid/image-upload-url',
-    authenticate,
-    requireOrg,
-    validate({
-        params: eventParamValidation,
-        query: imageUploadUrlQueryValidation,
-    }),
-    load(Event, {
-        identifier: "eid",
-        modelField: "id",
-        reqKey: "event"
-    }),
-    verifyOwnership(req => req.event.organizationId),
-    async (req, res, next) => {
-        const { type, contentType, count } = req.validatedQuery;
-        try {
-            if (type === 'cover') {
-                const result = await generateUploadUrl(`events/${req.event.id}/cover`, contentType);
-                return res.status(200).json({ message: "success", data: result });
-            }
+/* Gallery images.
 
-            const currentCount = await EventImage.count({ where: { eventId: req.event.id } });
-            if (currentCount + count > 10) {
-                return res.status(422).json({
-                    error: `Gallery would exceed 10 images (currently has ${currentCount})`
-                });
-            }
-            const urls = await Promise.all(
-                Array.from({ length: count }, () =>
-                    generateUploadUrl(`events/${req.event.id}/gallery`, contentType)
-                )
-            );
-            return res.status(200).json({ message: "success", data: urls });
-        } catch (err) {
-            next(err);
-        }
-    }
-);
+   Uploading is not handled here. development had its own presigned-URL route
+   against a separate S3 bucket; this project signs uploads at
+   POST /api/uploads/sign with kind 'event-image', straight to R2. Two signing
+   paths against two buckets would be one too many, so the client signs there,
+   PUTs the file, then posts the resulting public URLs to the route below. */
 
-// ADD gallery images (save S3 URLs after client-side upload)
+// ADD gallery images (record URLs the client has already uploaded)
 router.post('/:eid/gallery',
     authenticate,
     requireOrg,
@@ -390,7 +364,7 @@ router.delete('/:eid/gallery/:imageId',
         try {
             const image = await EventImage.findOne({ where: { id: imageId, eventId: req.event.id } });
             if (!image) return res.status(404).json({ error: "Image not found" });
-            await deleteFromS3(image.url);
+            await deleteObject(image.url);
             await image.destroy();
             return res.status(204).end();
         } catch (err) {

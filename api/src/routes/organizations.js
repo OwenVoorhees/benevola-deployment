@@ -10,7 +10,7 @@ const validate = require("../middleware/validate");
 const parseTags = require("../middleware/parseTags");
 const load = require("../middleware/load");
 const authenticate = require('../middleware/authenticate');
-const { requireOrg, verifyOwnership, } = require('../middleware/authorization');
+const { requireOrg, requireAdmin, verifyOwnership, } = require('../middleware/authorization');
 
 // GET organizations
 router.get('/', async (req, res, next) => {
@@ -26,7 +26,12 @@ router.get('/', async (req, res, next) => {
 });
 
 // CREATE a new org
+// Sign-up goes through POST /api/auth/register/org, which hashes the password
+// properly. This route takes a passwordHash directly, so it is an admin tool
+// rather than a public endpoint.
 router.post('/',
+    authenticate,
+    requireAdmin,
     validate({ body: orgValidation }),
     async (req, res, next) => {
         try {
@@ -199,18 +204,21 @@ router.post('/:oid/events',
         const org = req.org;
         const body = req.validatedBody;
 
+
         try {
-            const created = await sequelize.transaction(async (t) => {
-                const event = await org.createEvent(body, { transaction: t });
+            const updated = await sequelize.transaction(async (t) => {
+                const event = await org.createEvent( body, { transaction: t });
                 await event.setTags(req.parsedTags, { transaction: t });
+
                 const tags = await event.getTags({ transaction: t });
                 return { event, tags };
             });
-
+            
             return res.status(201).json({
                 message: "success",
-                data: created
+                data: updated
             });
+
         } catch (err) {
             next(err);
         }

@@ -1,39 +1,38 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
 
 const authenticate = async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-        return res.status(401).json({ message: "Not authenticated" });
-    }
+  const principal = req.session?.principal;
+  if (!principal) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
 
-    const token = authHeader.split(' ')[1];
-    let principal;
-    try {
-        principal = jwt.verify(token, process.env.JWT_SECRET);
-    } catch {
-        return res.status(401).json({ message: "Invalid token" });
-    }
+  const { kind, id } = principal;
 
-    const { kind, id } = principal;
-    if (kind !== "user" && kind !== "org") {
-        return res.status(401).json({ message: "Invalid token" });
-    }
+  if (kind !== "user" && kind !== "org") {
+    return res.status(401).json({ message: "Invalid session" });
+  }
 
-    const account = kind === "user"
-        ? await User.findByPk(id)
-        : await Organization.findByPk(id);
+  const account =
+    kind === "user"
+      ? await User.findByPk(id)
+      : await Organization.findByPk(id);
 
-    if (!account) {
-        return res.status(401).json({ message: "Invalid token" });
-    }
+  if (!account) {
+    return res.status(401).json({ message: "Invalid session" });
+  }
 
-    req.principal = principal;
-    if (kind === "user") req.user = account;
-    else req.org = account;
+  /* req.principal is the account that is signed in, and nothing downstream
+     reassigns it. req.user / req.org are convenient but not safe to trust for
+     authorization: load() overwrites them with whatever record the URL points
+     at, so a check placed after load() would be inspecting the target rather
+     than the caller. */
+  req.principal = account;
 
-    next();
+  if (kind === "user") req.user = account;
+  else req.org = account;
+
+  next();
 };
 
 module.exports = authenticate;

@@ -18,7 +18,7 @@ const eventValidation = z.object({
     address: z.string().max(150).nullable(),
     latitude: z.coerce.number().min(-90).max(90),
     longitude: z.coerce.number().min(-180).max(180),
-    coverPhoto: z.url().nullable(),
+    coverPhoto: z.url().nullable()
 }).strict();
 
 const updateEventValidation = z.object({
@@ -53,8 +53,10 @@ const tagsSchema = z.preprocess((val) => {
   
 
 const EventsQuerySchema = z.object({
-    q: z.string().optional(),
     tags: tagsSchema,
+
+    // free-text keyword; matches event title/description/address and tag names
+    q: z.string().trim().min(1).max(100).optional(),
 
     date: dateYYYYMMDD.optional(),
     beforeDate: dateYYYYMMDD.optional(),
@@ -104,10 +106,6 @@ const EventsQuerySchema = z.object({
     }
 });
 
-const searchQueryValidation = z.object({
-    q: z.string().min(1),
-})
-
 const attendeeBodyValidation = z.object({
     userId: z.coerce.number().int().positive(),
 }).strict();
@@ -117,38 +115,30 @@ const attendeeParamValidation = z.object({
     uid: z.coerce.number().int().positive(),
 });
 
+const addTagValidation = z.object({
+    slug: z.string().regex(/^[a-z0-9-]+$/)
+}).strict();
+
+/* Gallery, from development. The presigned-URL validator that shipped
+   alongside these is gone with the route it served: uploads are signed at
+   /api/uploads/sign instead. */
 const galleryImageParamValidation = z.object({
     eid: z.coerce.number().int().positive(),
     imageId: z.coerce.number().int().positive(),
 });
 
-const imageUploadUrlQueryValidation = z.object({
-    contentType: z.enum(['image/jpeg', 'image/png']),
-    type: z.enum(['cover', 'gallery']),
-    count: z.coerce.number().int().min(1).max(10).optional(),
-}).refine(
-    data => data.type !== 'gallery' || data.count != null,
-    { message: 'count is required for gallery uploads' }
-);
-
 const galleryBodyValidation = z.object({
     urls: z.array(z.url()).min(1).max(10),
 }).strict();
 
-const addTagValidation = z.object({
-    slug: z.string().regex(/^[a-z0-9-]+$/)
-}).strict();
-
-module.exports = {
-    eventValidation,
-    updateEventValidation,
-    eventParamValidation,
+module.exports = { 
+    eventValidation, 
+    updateEventValidation, 
+    eventParamValidation, 
     EventsQuerySchema,
-    searchQueryValidation,
+    galleryImageParamValidation,
+    galleryBodyValidation,
     attendeeBodyValidation,
     attendeeParamValidation,
-    addTagValidation,
-    galleryImageParamValidation,
-    imageUploadUrlQueryValidation,
-    galleryBodyValidation,
+    addTagValidation
 };

@@ -1,0 +1,80 @@
+/* ── CSS Custom Properties ──────────────────────────────────────── */
+:root {
+  --green-700: #2d6a4f;
+  --green-900: #1f4f3a;
+  --lime-400:  #95d558;
+  --gray-50:   #f9faf6;
+  --gray-100:  #f2f4ef;
+  --gray-200:  #e2e5dd;
+  --text:      #1a1a1a;
+  --text-muted:#5a5f55;
+  --surface:   #ffffff;
+  --input-bg:  #ffffff;
+  --nav-bg:    rgba(255, 255, 255, 0.95);
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --nav-h:     64px;
+  --page-max:  1280px;
+  --font:      'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Dark mode overrides ─────────────────────────────────────────── */
+[data-theme="dark"] {
+  --gray-50:    #1a2018;
+  --gray-100:   #161c17;
+  --gray-200:   #2a352b;
+  --text:       #e0e8e0;
+  --text-muted: #8a9a88;
+  --surface:    #212c23;
+  --input-bg:   #1a2018;
+  --nav-bg:     rgba(18, 24, 19, 0.95);
+}
+
+/* ── Reset ──────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Page shell ─────────────────────────────────────────────────── */
+.page {
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--surface);
+  min-height: 100vh;
+}
+
+/* ── Shared brand classes (used by Header + Footer) ─────────────── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand-name {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  color: var(--green-700);
+}
+
+/* ── Route transition ───────────────────────────────────── */
+
+/* Lives here rather than in a design stylesheet: src/design/Surface.jsx applies
+   it, and that layer has to work for whichever design is mounted. Short by
+   design — long enough to soften the swap, not long enough to make navigation
+   feel slower than it is. */
+@keyframes route-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.route-fade { animation: route-fade-in 150ms ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .route-fade { animation: none; }
+}
