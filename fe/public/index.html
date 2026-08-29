@@ -4,18 +4,22 @@
     <meta charset="utf-8" />
     <script>
       /* Stamp the design and theme before React boots, so the first frame is
-         not painted in the wrong mode. The colours are deliberately not set
-         here: they live in variants/default/css/tokens.css, and a stylesheet is
-         render-blocking, so it lands before the first paint anyway. Setting
-         them here too would put an inline style on :root that quietly beat the
-         stylesheet. */
+         not painted in the wrong mode. Light/dark is not a setting — it follows
+         the operating system — so this reads the media query rather than
+         storage, and React re-stamps the same value a moment later.
+
+         The colours are deliberately not set here: they live in
+         variants/default/css/tokens.css, and a stylesheet is render-blocking,
+         so it lands before the first paint anyway. Setting them here too would
+         put an inline style on :root that quietly beat the stylesheet. */
       (function() {
         var el = document.documentElement;
         el.setAttribute('data-design', 'default');
+        var dark = false;
         try {
-          var t = localStorage.getItem('theme');
-          el.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
-        } catch (e) { el.setAttribute('data-theme', 'light'); }
+          dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch (e) { /* no matchMedia — light is the design's own default */ }
+        el.setAttribute('data-theme', dark ? 'dark' : 'light');
       })();
     </script>
     <!-- SVG first: browsers that support it prefer it and it stays crisp at any

@@ -36,7 +36,7 @@ Default builds its entire palette, neutrals included, out of two variables:
 
 ```
 --brand-primary     #157C4F   buttons, links, focus rings, active nav, meter fill
---brand-secondary   #A3CF64   gradient second stop, section accents, glows
+--brand-secondary   #A3CF64   section accents and soft tints
 ```
 
 Everything else — hover states, soft tints, borders, and even the greys — is

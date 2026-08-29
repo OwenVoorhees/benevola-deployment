@@ -1,4 +1,4 @@
-/* ── Landing: the diagonal wash ─────────────────────────────────────── */
+/* ── Landing: the diagonal band ─────────────────────────────────────── */
 
 .def-hero {
   position: relative;
@@ -7,38 +7,22 @@
   padding: 76px 0 84px;
 }
 
-/* The signature: one full-bleed diagonal band of primary → secondary, held
-   at low alpha so headline ink stays readable across its whole width no
-   matter which two colours are picked. */
+/* The signature: one full-bleed diagonal band of flat primary, held at low
+   alpha so headline ink stays readable across its whole width no matter which
+   colour is picked. The skew is what gives it shape — the fill is one tone. */
 .def-hero::before {
   content: '';
   position: absolute;
   z-index: -1;
   inset: -220px 0 auto;
   height: 720px;
-  background: linear-gradient(102deg in oklch, var(--def-pri), var(--def-sec));
-  opacity: 0.15;
+  background: var(--def-pri);
+  opacity: 0.13;
   transform: skewY(-7deg);
   transform-origin: top left;
 }
 
-[data-theme='dark'] .def-hero::before { opacity: 0.24; }
-
-/* A soft bloom where the two colours meet, so the band has a focal point
-   instead of reading as flat tape. */
-.def-hero::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  top: -180px;
-  right: -120px;
-  width: 620px;
-  height: 620px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--def-sec) 0%, transparent 68%);
-  opacity: 0.2;
-  pointer-events: none;
-}
+[data-theme='dark'] .def-hero::before { opacity: 0.2; }
 
 .def-hero-inner {
   display: grid;
@@ -74,6 +58,45 @@
   .def-hero-inner { grid-template-columns: 1fr; gap: 40px; }
 }
 
+/* ── Photographs ────────────────────────────────────────────────────── */
+
+/* The wrapper carries the shape and the fallback ground, so a tile whose file
+   is missing is a flat brand block of exactly the right size rather than a
+   collapsed box. parts.jsx drops the <img> entirely on error. */
+.def-photo {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--def-r-lg);
+  /* The secondary, not the primary: an empty tile should read as a soft gap in
+     the page, not as something you can press. */
+  background: var(--def-sec-soft);
+}
+.def-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Landing: the hero picture and preview ──────────────────────────── */
+
+.def-hero-media { display: grid; }
+
+.def-hero-shot {
+  aspect-ratio: 16 / 10;
+  box-shadow: var(--def-shadow-lg);
+}
+
+/* The preview card overlaps the foot of the photograph, inset from the right,
+   so the pair reads as one composed object instead of two stacked boxes. */
+.def-hero-media .def-preview {
+  width: 88%;
+  margin: -58px 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
 /* The floating preview card: shows the product rather than describing it. */
 .def-preview {
   background: var(--def-panel);
@@ -90,7 +113,7 @@
   align-items: center;
   gap: 7px;
   padding: 11px 15px;
-  background: linear-gradient(100deg in oklch, var(--def-pri), var(--def-sec));
+  background: var(--def-pri);
 }
 .def-preview-dot { width: 8px; height: 8px; border-radius: 50%; background: oklch(100% 0 0 / 0.5); }
 .def-preview-title {
@@ -105,67 +128,50 @@
 @media (max-width: 900px) {
   .def-preview { transform: none; }
   .def-preview:hover { transform: none; }
+  /* A narrow column has no room to inset the card, and the tilt is gone, so
+     the pair sits square instead. */
+  .def-hero-media .def-preview { width: 100%; margin-top: -34px; }
 }
 
 /* ── Landing: the causes band ─────────────────────────── */
 
 /* Closes the hero the way a poster's bottom band does: the causes people
-   actually filter by, running past instead of sitting in a list. Purely
-   decorative — every one of these is reachable as a filter on /events, so the
-   band is never the only route to anything. */
-.def-ticker {
-  margin-top: clamp(44px, 6vw, 72px);
-  padding: 14px 0;
-  border-top: 1px solid var(--def-line);
-  border-bottom: 1px solid var(--def-line);
-  overflow: hidden;
-  /* Feathered ends, so a full-bleed band reads as continuing past the
-     viewport rather than being guillotined at it. */
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+   actually filter by, shown rather than listed. Purely decorative, and not
+   links — see the note on CAUSES in pages/Landing.jsx. */
+.def-causes {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 1120px;
+  margin: clamp(44px, 6vw, 72px) auto 0;
+  padding: 0 26px;
 }
 
-.def-ticker-track {
-  display: flex;
-  width: max-content;
-  animation: def-ticker 46s linear infinite;
+.def-cause { display: grid; gap: 9px; }
+
+.def-cause-shot {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--def-r);
 }
 
-/* The trailing space belongs to the item, not to a gap on the track. The
-   track is two identical halves and the loop translates by exactly -50%,
-   which only lands seamlessly when the width is the sum of the items alone.
-   A gap on the track leaves half a gap unaccounted for, and the band skips
-   sideways by that much on every pass. */
-.def-ticker-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 30px;
-  padding-right: 30px;
-  font-size: 0.9rem;
+.def-cause-name {
+  font-size: 0.82rem;
   font-weight: 560;
   letter-spacing: 0.012em;
   color: var(--def-ink-2);
-  white-space: nowrap;
 }
 
-.def-ticker-item::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--def-pri);
+/* Six squares get too narrow to read before the hero itself wraps, so the band
+   steps down to three and then two of its own accord. */
+@media (max-width: 900px) {
+  .def-causes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+}
+@media (max-width: 520px) {
+  .def-causes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .def-cause-name { font-size: 0.78rem; }
 }
 
-@keyframes def-ticker {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-@media (max-width: 600px) {
-  .def-ticker-item { font-size: 0.85rem; gap: 22px; padding-right: 22px; }
-}
-
-/* ── Landing: numbered rail ─────────────────────────────────────────── */
+/* ── Landing: step rail ─────────────────────────────────────────────── */
 
 .def-section { padding: 72px 0; }
 .def-section--tint { background: var(--def-ground-2); }
@@ -176,28 +182,18 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
-  counter-reset: def-step;
 }
 
 /* Steps, not cards: a hairline rule connects them across the row so the
-   sequence reads as one process instead of three unrelated tiles. */
+   sequence reads as one process instead of three unrelated tiles. The order is
+   carried by the rule and the reading order, not by a printed number. */
 .def-step {
   position: relative;
-  counter-increment: def-step;
   padding: 30px 30px 0 0;
   border-top: 1px solid var(--def-line-2);
 }
 .def-step + .def-step { padding-left: 30px; }
 
-.def-step::before {
-  content: counter(def-step, decimal-leading-zero);
-  display: block;
-  margin-bottom: 12px;
-  font-size: 0.78rem;
-  font-weight: 660;
-  letter-spacing: 0.1em;
-  color: var(--def-pri-text);
-}
 /* A tick on the rule marks where each step begins. */
 .def-step::after {
   content: '';
@@ -246,17 +242,8 @@
   overflow: hidden;
   border-radius: var(--def-r-lg);
   padding: 56px 44px;
-  background: linear-gradient(102deg in oklch, var(--def-pri), var(--def-sec));
+  background: var(--def-pri);
   color: var(--def-pri-ink);
-}
-/* At full saturation the far end of the gradient can land anywhere, so a
-   scrim biased toward the primary keeps the ink readable across it. */
-.def-cta::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(102deg, var(--def-pri) 0%, transparent 78%);
-  opacity: 0.82;
 }
 .def-cta > * { position: relative; }
 .def-cta h2 {

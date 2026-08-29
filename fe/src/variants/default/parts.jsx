@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useDesign } from '../../design/DesignContext';
 import { DEMO_MODE, isSample } from '../../config';
 
 /* Default primitives.
@@ -12,15 +11,9 @@ import { DEMO_MODE, isSample } from '../../config';
 
 export const Mark = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <defs>
-      <linearGradient id="def-mark" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="var(--def-pri)" />
-        <stop offset="100%" stopColor="var(--def-sec)" />
-      </linearGradient>
-    </defs>
     <path
       d="M20 4C10 4 4 9 4 16c0 1.6.4 3 1.1 4.2C8 14 13 11 18 10c-4 2.4-7.5 6-9.7 10.8 1 .3 2 .5 3.2.5 6.5 0 9.5-6 8.5-17.3Z"
-      fill="url(#def-mark)"
+      fill="var(--def-pri)"
     />
   </svg>
 );
@@ -192,6 +185,37 @@ export const Avatar = ({ src, name, lg }) => {
   );
 };
 
+/* A photograph that fails to a flat brand tile rather than to the browser's
+   broken-image glyph.
+
+   The landing page's pictures are files in public/home/, and a file can be
+   absent — nobody has dropped it in yet, or it was renamed. Dropping the <img>
+   leaves the wrapper's own tint showing, which reads as a deliberate block;
+   the glyph reads as a bug. See public/home/README.md for what goes where.
+
+   `eager` is for anything above the fold: lazy-loading the hero shot only
+   delays the first thing the visitor sees. */
+export const Photo = ({ src, alt = '', eager, className = '' }) => {
+  const [failed, setFailed] = useState(false);
+  /* Reset on src so a band that re-renders with different pictures does not
+     inherit an earlier tile's failure. */
+  useEffect(() => setFailed(false), [src]);
+
+  return (
+    <span className={['def-photo', className].filter(Boolean).join(' ')}>
+      {!failed && (
+        <img
+          src={src}
+          alt={alt}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          onError={() => setFailed(true)}
+        />
+      )}
+    </span>
+  );
+};
+
 /** Date block used down the left of every event row. */
 export const DateBlock = ({ iso }) => {
   const d = iso ? new Date(iso) : null;
@@ -205,22 +229,11 @@ export const DateBlock = ({ iso }) => {
 
 /* ── Shell ──────────────────────────────────────────────────────────── */
 
-const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <circle cx="12" cy="12" r="4.2" />
-    <path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7" strokeLinecap="round" />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M20.5 14.6A8.6 8.6 0 1 1 9.4 3.5a7 7 0 0 0 11.1 11.1Z" strokeLinejoin="round" />
-  </svg>
-);
+/* No light/dark control in the header: the theme follows the operating system
+   and updates live. See src/design/DesignContext.jsx. */
 
 export default function Shell({ children }) {
   const { auth, isOrg, logout } = useAuth();
-  const { theme, toggleTheme } = useDesign();
   const navigate = useNavigate();
 
   const accountId = auth?.user?.id;
@@ -244,14 +257,6 @@ export default function Shell({ children }) {
           </nav>
 
           <div className="def-nav-right">
-            <button
-              className="def-icon-btn"
-              onClick={toggleTheme}
-              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            >
-              {theme === 'light' ? <MoonIcon /> : <SunIcon />}
-            </button>
-
             {auth ? (
               <>
                 {isOrg && (

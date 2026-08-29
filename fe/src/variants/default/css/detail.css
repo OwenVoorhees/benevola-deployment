@@ -15,7 +15,7 @@
 .def-meter-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg in oklch, var(--def-pri), var(--def-sec));
+  background: var(--def-pri);
   transition: width 520ms var(--def-ease);
 }
 .def-meter-fill.is-full { background: var(--def-danger); }

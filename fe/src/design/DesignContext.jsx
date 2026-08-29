@@ -1,48 +1,65 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { DESIGNS, DEFAULT_DESIGN, LOCKED, THEME_KEY } from './config';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { LOCKED, DEFAULT_DESIGN } from './config';
 
 /* Holds the two things the shell still needs to know: which design is mounted
    (one, fixed) and whether the visitor is in light or dark mode.
 
    The design switcher and its colour picker were removed for deployment, so
-   there is no setter for either any more: the design is fixed in ./config.js
-   and the brand colours live in the stylesheet, at
-   variants/default/css/tokens.css. Light/dark stays a visitor preference — it
-   is a product feature rather than switcher chrome, and the header toggle
-   drives it. */
+   there is no setter for the design any more: it is fixed in ./config.js and
+   the brand colours live in the stylesheet, at
+   variants/default/css/tokens.css.
+
+   Light/dark is not a setting either. It follows the operating system, live —
+   there is no header toggle and nothing is persisted, so a visitor who flips
+   their machine to dark at sunset sees the site follow without touching it. */
 
 const DesignContext = createContext(null);
 
 const DESIGN = LOCKED ?? DEFAULT_DESIGN;
 
-function readStoredTheme() {
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+
+function systemTheme() {
   try {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
-  } catch { /* private mode, SSR, whatever — fall through */ }
-  return DESIGNS.find(d => d.id === DESIGN)?.theme ?? 'light';
+    return window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light';
+  } catch {
+    /* no matchMedia — jsdom without a stub, an ancient browser. Light is the
+       design's own default, so falling back to it changes nothing. */
+    return 'light';
+  }
 }
 
 export function DesignProvider({ children }) {
-  const [theme, setTheme] = useState(readStoredTheme);
+  const [theme, setTheme] = useState(systemTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-design', DESIGN);
   }, []);
 
+  /* Subscribe rather than read once: the OS preference can change while the
+     tab is open (a scheduled switch at dusk, someone toggling it by hand). */
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem(THEME_KEY, theme); } catch { /* ignore */ }
-  }, [theme]);
+    let mq;
+    try { mq = window.matchMedia(DARK_QUERY); } catch { return undefined; }
 
-  const toggleTheme = useCallback(() => {
-    setTheme(t => (t === 'light' ? 'dark' : 'light'));
+    const onChange = e => setTheme(e.matches ? 'dark' : 'light');
+    setTheme(mq.matches ? 'dark' : 'light');
+
+    /* addListener is the Safari < 14 spelling; it is still the only one there. */
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
   }, []);
 
-  const value = useMemo(
-    () => ({ design: DESIGN, theme, setTheme, toggleTheme }),
-    [theme, toggleTheme]
-  );
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const value = useMemo(() => ({ design: DESIGN, theme }), [theme]);
 
   return <DesignContext.Provider value={value}>{children}</DesignContext.Provider>;
 }

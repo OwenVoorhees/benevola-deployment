@@ -20,6 +20,9 @@
    To let visitors choose again, set LOCKED back to null and restore
    DesignSwitcher (deleted — recover it from git history).
 
+   Light/dark is not a stored preference: it follows the operating system.
+   See src/design/DesignContext.jsx.
+
    NOTE: EventNew lives in src/shared and is served to every design by the
    registry.
    ────────────────────────────────────────────────────── */
@@ -31,19 +34,18 @@ export const LOCKED = 'default';
 export const DEFAULT_DESIGN = 'default';
 
 /* `tunable: true` means the design builds its palette from the brand colours
-   in ./brand.js rather than carrying a hand-tuned one. */
+   in ./brand.js rather than carrying a hand-tuned one. `theme` records which
+   mode the design was drawn for; nothing reads it now that light/dark follows
+   the operating system, but it is what a restored switcher would open in. */
 export const DESIGNS = [
   {
     id:      'default',
     name:    'Default',
     label:   '00',
-    tagline: 'Open daylight — gradient band, soft cards, your colour',
+    tagline: 'Open daylight — flat brand band, soft cards, your colour',
     theme:   'light',
     tunable: true,
   },
 ];
 
 export const DESIGN_IDS = DESIGNS.map(d => d.id);
-
-/** Light/dark is still a visitor preference, so it still persists. */
-export const THEME_KEY = 'theme';

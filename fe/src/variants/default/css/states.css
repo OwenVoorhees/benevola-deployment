@@ -32,16 +32,12 @@
   height: 66px;
   margin-bottom: 8px;
   border-radius: var(--def-r);
-  background: linear-gradient(
-    100deg,
-    var(--def-ground-2) 30%,
-    var(--def-panel-2) 50%,
-    var(--def-ground-2) 70%
-  );
-  background-size: 220% 100%;
-  animation: def-sweep 1.5s ease-in-out infinite;
+  background: var(--def-ground-2);
+  animation: def-pulse 1.5s ease-in-out infinite;
 }
-@keyframes def-sweep { from { background-position: 180% 0; } to { background-position: -60% 0; } }
+/* A flat block breathing, rather than a sheen swept across it: the sheen was
+   the one gradient left in the app surfaces. */
+@keyframes def-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 
 .def-toast {
   position: fixed;

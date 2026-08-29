@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Shell, {
-  ArrowLink, Btn, Chip, DateBlock, Eyebrow, State, Skeleton, useFirstReveal,
+  ArrowLink, Btn, Chip, DateBlock, Eyebrow, Photo, State, Skeleton, useFirstReveal,
 } from '../parts';
 import { useEventsSearch } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
@@ -10,13 +10,25 @@ import { formatDuration, shortAddress } from '../../../data/format';
    doing? The hero preview shows live openings rather than a stock mockup, so
    the proof and the product are the same object. */
 
-/* The cause vocabulary from the tag list, trimmed to the ones that read as a
-   reason to show up rather than a logistic. Doubled at render so the band's
-   -50% loop is seamless. */
+/* The cause vocabulary from the tag list, trimmed to the six that read as a
+   reason to show up rather than a logistic, and paired with a photograph.
+
+   Purely visual, like the scrolling word band it replaced. The tiles are not
+   links and are not meant to become them: they show what the work looks like,
+   and every one of these causes is reachable as a filter on /events, so the
+   band is never the only route to anything. (It could not link as it stands
+   anyway — the Events page keeps its filters in local state and does not read
+   them off the URL, so /events?tag=... would land on an unfiltered list.)
+
+   `photo` is a file in public/home/causes/. A missing one renders as a flat
+   brand tile with the label still on it — see public/home/README.md. */
 const CAUSES = [
-  'Food Security', 'Environment', 'Animal Welfare', 'Education',
-  'Tutoring', 'Mentoring', 'Housing', 'Health & Wellness',
-  'Community Development', 'Social Justice', 'Seniors', 'Youth',
+  { name: 'Food Security',    photo: '/home/causes/food-security.jpg' },
+  { name: 'Environment',      photo: '/home/causes/environment.jpg' },
+  { name: 'Animal Welfare',   photo: '/home/causes/animal-welfare.jpg' },
+  { name: 'Education',        photo: '/home/causes/education.jpg' },
+  { name: 'Housing',          photo: '/home/causes/housing.jpg' },
+  { name: 'Health & Wellness', photo: '/home/causes/health-wellness.jpg' },
 ];
 
 const Tick = () => (
@@ -75,36 +87,48 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="def-preview" aria-hidden={s.loading ? 'true' : undefined}>
-            <div className="def-preview-bar">
-              <span className="def-preview-dot" />
-              <span className="def-preview-dot" />
-              <span className="def-preview-dot" />
-              <span className="def-preview-title">OPEN NEAR YOU</span>
-            </div>
-            <div className="def-preview-body">
-              {s.loading ? (
-                <div style={{ padding: 16 }}><Skeleton rows={3} /></div>
-              ) : soon.length === 0 ? (
-                <p className="def-muted" style={{ padding: '26px 18px', margin: 0 }}>
-                  Nothing posted yet. New shifts land here first.
-                </p>
-              ) : (
-                soon.slice(0, 3).map(ev => (
-                  <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} compact />
-                ))
-              )}
+          <div className="def-hero-media">
+            {/* The photograph says what the week looks like; the card under it
+                proves the openings are real. Both, in that order. */}
+            <Photo
+              className="def-hero-shot"
+              src="/home/hero.jpg"
+              alt="Volunteers sorting donations at a community food bank"
+              eager
+            />
+
+            <div className="def-preview" aria-hidden={s.loading ? 'true' : undefined}>
+              <div className="def-preview-bar">
+                <span className="def-preview-dot" />
+                <span className="def-preview-dot" />
+                <span className="def-preview-dot" />
+                <span className="def-preview-title">OPEN NEAR YOU</span>
+              </div>
+              <div className="def-preview-body">
+                {s.loading ? (
+                  <div style={{ padding: 16 }}><Skeleton rows={3} /></div>
+                ) : soon.length === 0 ? (
+                  <p className="def-muted" style={{ padding: '26px 18px', margin: 0 }}>
+                    Nothing posted yet. New shifts land here first.
+                  </p>
+                ) : (
+                  soon.slice(0, 3).map(ev => (
+                    <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} compact />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Causes running along the foot of the hero */}
-        <div className="def-ticker" aria-hidden="true">
-          <div className="def-ticker-track">
-            {[...CAUSES, ...CAUSES].map((cause, i) => (
-              <span className="def-ticker-item" key={i}>{cause}</span>
-            ))}
-          </div>
+        <div className="def-causes" aria-hidden="true">
+          {CAUSES.map(cause => (
+            <div className="def-cause" key={cause.name}>
+              <Photo src={cause.photo} className="def-cause-shot" />
+              <span className="def-cause-name">{cause.name}</span>
+            </div>
+          ))}
         </div>
       </section>
 
