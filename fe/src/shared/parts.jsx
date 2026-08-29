@@ -261,6 +261,41 @@ function MapMover({ lat, lng }) {
   return null;
 }
 
+/* Leaflet measures its container once, when the map is constructed, and then
+   trusts that measurement. Anything that sizes the container afterwards — a
+   grid or flex track resolving, a panel opening, the window changing, a font
+   landing — leaves the map convinced it is still the size it was born at.
+   When that size was zero, which is what a container styled only with
+   min-height gives you on the first pass, no tiles are ever requested and the
+   map is a grey rectangle for good.
+
+   invalidateSize() is the re-measure. Once on mount for the first case, then
+   on every container resize for the rest. */
+function MapResizer() {
+  const map = useMap();
+
+  React.useEffect(() => {
+    map.invalidateSize();
+
+    /* Also after the frame settles: on mount the container may still be
+       mid-layout, and a second look costs nothing. */
+    const raf = requestAnimationFrame(() => map.invalidateSize());
+
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => map.invalidateSize());
+      ro.observe(map.getContainer());
+    }
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (ro) ro.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
+
 function MapClicks({ onPick }) {
   useMapEvents({
     click: async (e) => {
@@ -303,6 +338,7 @@ export function MapView({ lat, lng, zoom = 14 }) {
       {has && <Marker position={[lat, lng]} icon={PIN} />}
       {/* Re-centres when the caller swaps in a different place. */}
       <MapMover lat={lat} lng={lng} />
+      <MapResizer />
     </MapContainer>
   );
 }
@@ -330,6 +366,7 @@ export function MapPicker({ lat, lng, address, onPick }) {
           {has && <Marker position={[lat, lng]} icon={PIN} />}
           <MapClicks onPick={onPick} />
           <MapMover lat={lat} lng={lng} />
+          <MapResizer />
         </MapContainer>
       </div>
       <div className="ui-map-hint">Click the map to drop a pin, or pick a suggestion above.</div>

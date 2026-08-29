@@ -127,54 +127,58 @@ export default function Landing() {
 
       </section>
 
-      {/* The local band: one listing's photograph at close to full height, with
-          everything else sitting along its bottom edge. The three steps are the
-          same three as before, cut down — at this size the picture is doing the
-          talking and the words are captions under it. */}
-      <section
-        className="def-local"
-        style={localPick ? { backgroundImage: `url("${localPick.heroImage}")` } : undefined}
-      >
-        <div className="def-local-inner">
-          <div className="def-local-copy">
-            <Eyebrow>How it works</Eyebrow>
-            <h2 className="def-local-h2">Close enough to actually get to.</h2>
-            <p className="def-local-lede">
-              Everything on Benevola is around Raleigh — near enough to reach
-              after work or on a Saturday morning. Set how far you are willing
-              to travel and the list comes back the right size.
-            </p>
+      {/* The photograph, plain and full width. No wash over it and nothing set
+          on top: what it has to do is be looked at. Everything it introduces
+          is in the section under it. */}
+      <Photo
+        className="def-local-shot"
+        src={localPick?.heroImage}
+        alt={localPick ? `Volunteers at ${localPick.title}` : ''}
+      />
 
-            <div className="def-local-steps">
-              <div className="def-local-step">
-                <h3>Find a shift</h3>
-                <p>By cause, date and radius.</p>
+      <section className="def-section def-section--tint">
+        <div className="def-wrap">
+          <div className="def-local">
+            <div className="def-local-copy">
+              <Eyebrow>How it works</Eyebrow>
+              <h2 className="def-h2">Close enough to actually get to.</h2>
+              <p className="def-sub">
+                Everything on Benevola is around Raleigh — near enough to reach
+                after work or on a Saturday morning. Set how far you are willing
+                to travel and the list comes back the right size.
+              </p>
+
+              <div className="def-local-steps">
+                <div className="def-local-step">
+                  <h3>Find a shift</h3>
+                  <p>By cause, date and radius.</p>
+                </div>
+                <div className="def-local-step">
+                  <h3>Sign on</h3>
+                  <p>One click puts you on the roster.</p>
+                </div>
+                <div className="def-local-step">
+                  <h3>Turn up</h3>
+                  <p>The details wait in your profile.</p>
+                </div>
               </div>
-              <div className="def-local-step">
-                <h3>Sign on</h3>
-                <p>One click puts you on the roster.</p>
-              </div>
-              <div className="def-local-step">
-                <h3>Turn up</h3>
-                <p>The details wait in your profile.</p>
+
+              <div className="def-local-actions">
+                <Btn as={Link} to="/events">Browse openings near you</Btn>
               </div>
             </div>
 
-            <div className="def-local-actions">
-              <Btn as={Link} to="/events">Browse openings near you</Btn>
-            </div>
-          </div>
-
-          {/* Sample map, bottom right, over the photograph. Not a link: Leaflet
-              puts the OpenStreetMap attribution inside the canvas as an anchor,
-              and anchors cannot nest. */}
-          <div className="def-local-map">
-            <div className="def-local-map-head">
-              {pin ? <Link to={`/events/${pin.id}`}>{pin.title}</Link> : <b>Around Raleigh</b>}
-              <span>{pin?.address ? shortAddress(pin.address) : 'Raleigh, North Carolina'}</span>
-            </div>
-            <div className="def-local-map-canvas">
-              <MapView lat={pin?.latitude} lng={pin?.longitude} zoom={12} />
+            {/* Not a link: Leaflet puts the OpenStreetMap attribution inside the
+                canvas as an anchor, and anchors cannot nest. The title is the
+                way through. */}
+            <div className="def-local-map">
+              <div className="def-local-map-head">
+                {pin ? <Link to={`/events/${pin.id}`}>{pin.title}</Link> : <b>Around Raleigh</b>}
+                <span>{pin?.address ? shortAddress(pin.address) : 'Raleigh, North Carolina'}</span>
+              </div>
+              <div className="def-local-map-canvas">
+                <MapView lat={pin?.latitude} lng={pin?.longitude} zoom={12} />
+              </div>
             </div>
           </div>
         </div>
