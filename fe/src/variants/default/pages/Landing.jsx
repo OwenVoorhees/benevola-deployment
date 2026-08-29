@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Shell, {
   ArrowLink, Btn, Chip, DateBlock, Eyebrow, Photo, State, Skeleton, useFirstReveal,
 } from '../parts';
+import { MapView } from '../../../shared/parts';
 import { useEventsSearch } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
 
@@ -10,26 +11,20 @@ import { formatDuration, shortAddress } from '../../../data/format';
    doing? The hero preview shows live openings rather than a stock mockup, so
    the proof and the product are the same object. */
 
-/* The cause vocabulary from the tag list, trimmed to the six that read as a
-   reason to show up rather than a logistic, and paired with a photograph.
+/* Every picture on this page is a real listing's cover photo, taken off the
+   same feed that fills the openings list — nothing is a stock shot and nothing
+   is a file we keep. So the page cannot show a photograph of work that is not
+   actually posted, and it restyles itself the day the seed data changes.
 
-   Purely visual, like the scrolling word band it replaced. The tiles are not
-   links and are not meant to become them: they show what the work looks like,
-   and every one of these causes is reachable as a filter on /events, so the
-   band is never the only route to anything. (It could not link as it stands
-   anyway — the Events page keeps its filters in local state and does not read
-   them off the URL, so /events?tag=... would land on an unfiltered list.)
-
-   `photo` is a file in public/home/causes/. A missing one renders as a flat
-   brand tile with the label still on it — see public/home/README.md. */
-const CAUSES = [
-  { name: 'Food Security',    photo: '/home/causes/food-security.jpg' },
-  { name: 'Environment',      photo: '/home/causes/environment.jpg' },
-  { name: 'Animal Welfare',   photo: '/home/causes/animal-welfare.jpg' },
-  { name: 'Education',        photo: '/home/causes/education.jpg' },
-  { name: 'Housing',          photo: '/home/causes/housing.jpg' },
-  { name: 'Health & Wellness', photo: '/home/causes/health-wellness.jpg' },
-];
+   `nth` picks from the events that have a photo, so a listing posted without
+   one leaves a gap in the list rather than a hole in the page. The order the
+   API returns is by date and is stable, so the same slot keeps the same
+   picture between renders. Returns null while the feed is still loading,
+   which every caller below is written to handle. */
+function photoAt(events, nth) {
+  const withPhotos = events.filter(ev => ev.heroImage);
+  return withPhotos[nth % (withPhotos.length || 1)] ?? null;
+}
 
 const Tick = () => (
   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -69,6 +64,13 @@ export default function Landing() {
   const revealing = useFirstReveal(!s.loading);
   const soon = s.events.slice(0, 6);
 
+  /* Three different listings, so the page does not show the same photograph
+     three times, and the one whose pin the closing map drops. */
+  const heroPick  = photoAt(s.events, 0);
+  const orgPick   = photoAt(s.events, 1);
+  const closePick = photoAt(s.events, 2);
+  const pin = s.events.find(ev => ev.latitude != null && ev.longitude != null) ?? null;
+
   return (
     <Shell>
       <section className="def-hero">
@@ -92,8 +94,8 @@ export default function Landing() {
                 proves the openings are real. Both, in that order. */}
             <Photo
               className="def-hero-shot"
-              src="/home/hero.jpg"
-              alt="Volunteers sorting donations at a community food bank"
+              src={heroPick?.heroImage}
+              alt={heroPick ? `Volunteers at ${heroPick.title}` : ''}
               eager
             />
 
@@ -121,15 +123,6 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Causes running along the foot of the hero */}
-        <div className="def-causes" aria-hidden="true">
-          {CAUSES.map(cause => (
-            <div className="def-cause" key={cause.name}>
-              <Photo src={cause.photo} className="def-cause-shot" />
-              <span className="def-cause-name">{cause.name}</span>
-            </div>
-          ))}
-        </div>
       </section>
 
       <section className="def-section def-section--tint">
@@ -188,7 +181,12 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="def-section def-section--tint">
+      {/* Photograph behind the whole band, under a flat brand scrim that the
+          light ink is measured against — see .def-section--photo. */}
+      <section
+        className={'def-section' + (orgPick ? ' def-section--photo' : ' def-section--tint')}
+        style={orgPick ? { backgroundImage: `url("${orgPick.heroImage}")` } : undefined}
+      >
         <div className="def-wrap">
           <div className="def-split">
             <div>
@@ -228,10 +226,35 @@ export default function Landing() {
 
       <section className="def-section">
         <div className="def-wrap">
-          <div className="def-cta">
-            <h2>Somebody nearby needs a hand this weekend.</h2>
-            <p>Free for volunteers. Free for the organizations doing the work.</p>
-            <Btn as={Link} to="/events">Find something to do</Btn>
+          <div className="def-close">
+            <div
+              className={'def-cta' + (closePick ? ' has-photo' : '')}
+              style={closePick ? { backgroundImage: `url("${closePick.heroImage}")` } : undefined}
+            >
+              <h2>Somebody nearby needs a hand this weekend.</h2>
+              <p>Free for volunteers. Free for the organizations doing the work.</p>
+              <Btn as={Link} to="/events">Find something to do</Btn>
+            </div>
+
+            {/* A real pin from a real listing, not a mock: the map is the same
+                one the event page draws, so what it promises here is what the
+                visitor gets when they click through. Hidden entirely until the
+                feed has given us somewhere to point at, because an empty map
+                of the mid-Atlantic sells nothing. */}
+            {pin && (
+              <div className="def-close-map">
+                <div className="def-close-map-head">
+                  <Link to={`/events/${pin.id}`}>{pin.title}</Link>
+                  {pin.address && <span>{shortAddress(pin.address)}</span>}
+                </div>
+                {/* The card is not itself a link: Leaflet renders the OpenStreetMap
+                    attribution as an anchor inside the canvas, and an anchor cannot
+                    be nested in another one. The title above is the way through. */}
+                <div className="def-close-map-canvas">
+                  <MapView lat={pin.latitude} lng={pin.longitude} zoom={13} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

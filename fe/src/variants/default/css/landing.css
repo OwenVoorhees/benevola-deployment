@@ -133,48 +133,57 @@
   .def-hero-media .def-preview { width: 100%; margin-top: -34px; }
 }
 
-/* ── Landing: the causes band ─────────────────────────── */
-
-/* Closes the hero the way a poster's bottom band does: the causes people
-   actually filter by, shown rather than listed. Purely decorative, and not
-   links — see the note on CAUSES in pages/Landing.jsx. */
-.def-causes {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 14px;
-  max-width: 1120px;
-  margin: clamp(44px, 6vw, 72px) auto 0;
-  padding: 0 26px;
-}
-
-.def-cause { display: grid; gap: 9px; }
-
-.def-cause-shot {
-  aspect-ratio: 1 / 1;
-  border-radius: var(--def-r);
-}
-
-.def-cause-name {
-  font-size: 0.82rem;
-  font-weight: 560;
-  letter-spacing: 0.012em;
-  color: var(--def-ink-2);
-}
-
-/* Six squares get too narrow to read before the hero itself wraps, so the band
-   steps down to three and then two of its own accord. */
-@media (max-width: 900px) {
-  .def-causes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-}
-@media (max-width: 520px) {
-  .def-causes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .def-cause-name { font-size: 0.78rem; }
-}
-
-/* ── Landing: step rail ─────────────────────────────────────────────── */
+/* ── Landing: sections ──────────────────────────────────────────────── */
 
 .def-section { padding: 72px 0; }
 .def-section--tint { background: var(--def-ground-2); }
+
+/* A band with a listing's own photograph behind it.
+
+   The photograph is set inline by the page, because the URL comes off the API.
+   Everything that makes it readable lives here: cover-positioned, then a FLAT
+   scrim of the primary over it — flat, not a gradient, so the ink is measured
+   against one colour rather than against whichever end of a ramp it lands on.
+   At 0.88 the picture reads as texture and tone; white on the primary is
+   5.2:1, and the photograph cannot lift it above that. */
+.def-section--photo {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--def-pri);
+  background-size: cover;
+  background-position: center;
+  color: var(--def-pri-ink);
+}
+.def-section--photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--def-pri);
+  opacity: 0.88;
+}
+
+/* The band's own ink, which would otherwise be the page's near-black. The
+   floating panel inside it keeps its own colours: it is a white card on a
+   photograph, which is the contrast the section is built around. */
+.def-section--photo .def-h2,
+.def-section--photo .def-sub,
+.def-section--photo .def-check li { color: var(--def-pri-ink); }
+.def-section--photo .def-sub,
+.def-section--photo .def-check li { opacity: 0.9; }
+.def-section--photo .def-check svg { color: var(--def-pri-ink); }
+.def-section--photo .def-eyebrow { color: var(--def-pri-ink); opacity: 0.78; }
+
+/* The one button on this band sits on the photograph, so it inverts the way
+   the closing box's does: panel ground, brand ink. */
+.def-section--photo .def-btn {
+  color: var(--def-pri-text);
+  background: var(--def-panel);
+  box-shadow: 0 2px 10px oklch(0% 0 0 / 0.14);
+}
+.def-section--photo .def-btn:hover:not(:disabled) { background: var(--def-panel); }
+
+/* ── Landing: step rail ─────────────────────────────────────────────── */
 
 .def-section-head { max-width: 60ch; margin-bottom: 36px; }
 
@@ -237,6 +246,16 @@
 
 /* ── Landing: closing band ──────────────────────────────────────────── */
 
+/* The box and the map beside it. The map is the narrower column: it is the
+   evidence, not the argument. */
+.def-close {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 20px;
+  align-items: stretch;
+}
+@media (max-width: 880px) { .def-close { grid-template-columns: 1fr; } }
+
 .def-cta {
   position: relative;
   overflow: hidden;
@@ -244,6 +263,28 @@
   padding: 56px 44px;
   background: var(--def-pri);
   color: var(--def-pri-ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Without this the button, as a flex item, stretches the full width of the
+     box instead of sizing to its label. */
+  align-items: flex-start;
+}
+
+/* Same treatment as .def-section--photo, and for the same reason: a flat scrim
+   over the picture so the ink is measured against one known colour. The
+   photograph itself is set inline, from the API. */
+.def-cta.has-photo {
+  background-size: cover;
+  background-position: center;
+  background-color: var(--def-pri);
+}
+.def-cta.has-photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--def-pri);
+  opacity: 0.86;
 }
 .def-cta > * { position: relative; }
 .def-cta h2 {
@@ -263,3 +304,60 @@
 .def-cta .def-btn:hover:not(:disabled) { background: var(--def-panel); }
 
 @media (max-width: 600px) { .def-cta { padding: 40px 26px; } }
+
+/* ── Landing: the closing map ───────────────────────────────────────── */
+
+/* A card that happens to contain a map. MapView takes no input at all, so the
+   canvas never swallows a click or a scroll; the title in the head is the only
+   thing here you can press. */
+.def-close-map {
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+  overflow: hidden;
+  border: 1px solid var(--def-line);
+  border-radius: var(--def-r-lg);
+  background: var(--def-panel);
+  box-shadow: var(--def-shadow);
+}
+
+.def-close-map-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--def-line);
+}
+.def-close-map-head a {
+  font-size: 0.94rem;
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  color: var(--def-ink);
+  text-decoration: none;
+}
+.def-close-map-head a:hover { color: var(--def-pri-text); }
+.def-close-map-head span { font-size: 0.83rem; color: var(--def-ink-2); }
+
+/* Leaflet sizes itself to its container, so the container needs a resolved
+   height: flex-grow against the card's own min-height gives it one. */
+.def-close-map-canvas { display: block; flex: 1; min-height: 200px; }
+
+/* Leaflet paints its own controls and panes at z-indices in the thousands,
+   which is enough to sit over the sticky header. Nothing here is interactive,
+   so a stacking context of its own keeps it in its box. */
+.def-close-map-canvas,
+.def-map { position: relative; isolation: isolate; z-index: 0; }
+
+/* ── The event page's map ───────────────────────────────────────────── */
+
+.def-map {
+  height: 220px;
+  overflow: hidden;
+  border-radius: var(--def-r) var(--def-r) 0 0;
+}
+.def-map-note {
+  margin: 0;
+  padding: 11px 16px;
+  font-size: 0.83rem;
+  color: var(--def-ink-2);
+}

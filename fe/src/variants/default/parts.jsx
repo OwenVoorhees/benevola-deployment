@@ -188,10 +188,12 @@ export const Avatar = ({ src, name, lg }) => {
 /* A photograph that fails to a flat brand tile rather than to the browser's
    broken-image glyph.
 
-   The landing page's pictures are files in public/home/, and a file can be
-   absent — nobody has dropped it in yet, or it was renamed. Dropping the <img>
-   leaves the wrapper's own tint showing, which reads as a deliberate block;
-   the glyph reads as a bug. See public/home/README.md for what goes where.
+   The pictures are listings' own cover photos, so the URL is whatever an
+   organization saved: a host that has gone away, a file that was deleted, or
+   nothing at all while the feed is still loading. Dropping the <img> leaves
+   the wrapper's own tint showing, which reads as a deliberate block; the glyph
+   reads as a bug. The tile keeps its size either way, so the picture arriving
+   does not shift the page.
 
    `eager` is for anything above the fold: lazy-loading the hero shot only
    delays the first thing the visitor sees. */
@@ -203,7 +205,7 @@ export const Photo = ({ src, alt = '', eager, className = '' }) => {
 
   return (
     <span className={['def-photo', className].filter(Boolean).join(' ')}>
-      {!failed && (
+      {src && !failed && (
         <img
           src={src}
           alt={alt}

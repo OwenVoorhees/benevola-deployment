@@ -263,6 +263,42 @@ function MapClicks({ onPick }) {
   return null;
 }
 
+/* A map that only shows where something is.
+
+   MapPicker below is the editing tool — it reverse-geocodes a click into an
+   address. This one takes no input at all: no dragging, no zoom control, no
+   click handler, so it cannot swallow a scroll or wander off the pin. It is
+   a picture of a place that happens to be drawn by Leaflet.
+
+   The caller owns the box and its height; this fills whatever it is given. */
+export function MapView({ lat, lng, zoom = 14 }) {
+  const has = lat != null && lng != null;
+
+  return (
+    <MapContainer
+      center={has ? [lat, lng] : FALLBACK_CENTER}
+      zoom={has ? zoom : 4}
+      style={{ width: '100%', height: '100%' }}
+      scrollWheelZoom={false}
+      dragging={false}
+      doubleClickZoom={false}
+      touchZoom={false}
+      boxZoom={false}
+      keyboard={false}
+      zoomControl={false}
+      attributionControl
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {has && <Marker position={[lat, lng]} icon={PIN} />}
+      {/* Re-centres when the caller swaps in a different place. */}
+      <MapMover lat={lat} lng={lng} />
+    </MapContainer>
+  );
+}
+
 export function MapPicker({ lat, lng, address, onPick }) {
   const has = lat != null && lng != null;
 
