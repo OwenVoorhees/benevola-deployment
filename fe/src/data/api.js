@@ -156,7 +156,7 @@ export async function fetchUser(id) {
 }
 
 export async function fetchOrgs() {
-  const data = await getJson(`${API}/api/orgs/`);
+  const data = await getJson(`${API}/api/orgs`);
   return (data.data ?? []).map(mapOrg);
 }
 
@@ -216,7 +216,12 @@ export function buildSearchUrl(filters, page) {
   params.set('limit',  filters.limit);
   params.set('offset', page * filters.limit);
 
-  const base = filters.keyword ? `${API}/api/events/search` : `${API}/api/events/`;
+  /* No trailing slash on either base. Vercel's `/api/:path*` rewrite in
+     fe/vercel.json does not match "/api/events/", so a trailing slash falls
+     through to the SPA fallback and returns index.html with a 200 — the
+     fetch then fails on res.json() rather than on a status code, which
+     surfaces as "the API is not answering" with the API perfectly healthy. */
+  const base = filters.keyword ? `${API}/api/events/search` : `${API}/api/events`;
   return `${base}?${params.toString()}`;
 }
 
