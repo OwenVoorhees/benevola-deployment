@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcryptjs');
+const { demoHash, announce } = require('../src/seedCredentials');
 
 /* Volunteers, plus the RSVPs that make the rest of the app worth looking at.
  *
@@ -18,10 +18,10 @@ const bcrypt = require('bcryptjs');
  *   Riverbank Tree Planting      2 of 25   quiet
  *   everything else              0         empty-state
  *
- * Same shared password as the organizations. Local demo data only.
+ * Same shared password as the organizations: locally the known one, in
+ * production DEMO_PASSWORD from the environment, and no working password at
+ * all if that is unset. See src/seedCredentials.js.
  */
-
-const DEMO_PASSWORD = 'demopass123';
 
 /* pravatar returns a consistent portrait per identifier, which suits avatars
    better than the landscape placeholders used for events. Needs the internet. */
@@ -66,7 +66,8 @@ module.exports = {
     const fresh = VOLUNTEERS.filter(v => !seeded.has(v.email));
 
     if (fresh.length) {
-      const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+      const passwordHash = await demoHash(queryInterface);
+      announce(queryInterface, 'volunteers');
       await queryInterface.bulkInsert(
         'users',
         fresh.map(v => ({
