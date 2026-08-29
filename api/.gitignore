@@ -1,3 +1,11 @@
 node_modules
 data
 .env
+
+# Build artefacts and installers do not belong in the repository. A 51MB AWS
+# CLI package and a 69MB Lambda deployment zip were committed once; both are
+# still in git history and every clone pays for them.
+.serverless/
+*.zip
+*.pkg
+*.dmg

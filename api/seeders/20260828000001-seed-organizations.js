@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcryptjs');
+const { demoHash, announce } = require('../src/seedCredentials');
 
 /* Six North Carolina organizations, each with a working login.
  *
@@ -8,12 +8,12 @@ const bcrypt = require('bcryptjs');
  * see the standing notice in the footer and the "Sample" tag on every event
  * page. If you ever seed a public database, keep that labelling.
  *
- * Every seeded account shares one password so the dataset is usable for demos
- * and manual testing. That is fine locally and a bad idea anywhere public:
- * anyone who reads this file can sign in as any of these organizations.
+ * Locally every account shares one known password so the dataset is usable. In
+ * production they share DEMO_PASSWORD from the environment instead, and if it
+ * is not set they get no working password at all — this repository is public,
+ * so a password written here would be a published login. See
+ * src/seedCredentials.js.
  */
-
-const DEMO_PASSWORD = 'demopass123';
 
 /* picsum.photos serves Unsplash photography under a free licence and returns a
    stable image for a given seed, so an organization keeps the same picture
@@ -98,7 +98,8 @@ module.exports = {
 
     // One hash reused across the seed data: these accounts share a password,
     // so there is nothing gained by salting each one separately.
-    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+    const passwordHash = await demoHash(queryInterface);
+    announce(queryInterface, 'orgs');
 
     await queryInterface.bulkInsert(
       'organizations',

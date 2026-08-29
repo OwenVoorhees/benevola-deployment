@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcryptjs');
+const { adminRequested, adminHash, announce } = require('../src/seedCredentials');
 
 /* One administrator, so the admin role is testable straight after seeding.
  *
@@ -9,21 +9,30 @@ const bcrypt = require('bcryptjs');
  * to become one over HTTP — the profile endpoint refuses to change `role` — so
  * promotion happens here or through `npm run admin:grant`.
  *
- * This account's password is in this file, which is fine locally and not fine
- * on a public deployment. Before seeding anything public, change it here or
- * delete this seeder and promote a real account with `npm run admin:grant`.
+ * The account worth protecting most: an admin can list every registered user's
+ * email address and delete the shared tag vocabulary. It takes ADMIN_PASSWORD
+ * rather than DEMO_PASSWORD, so handing someone the demo login never hands
+ * them moderation rights.
+ *
+ * In production the admin is only created when ADMIN_PASSWORD is set. A
+ * default deployment has no administrator at all, which is the right default —
+ * promote one later with `npm run admin:grant` if you would rather.
  */
 
 const ADMIN = {
   username: 'site_admin',
   email: 'admin@benevola.test',
   displayName: 'Site Admin',
-  password: 'demopass123',
 };
 
 module.exports = {
   async up(queryInterface, Sequelize) {
     const now = new Date();
+
+    if (!adminRequested(queryInterface)) {
+      announce(queryInterface, 'admin');
+      return;
+    }
 
     /* Exactly one admin, and re-running must not create a second. */
     const present = await queryInterface.sequelize.query(
@@ -35,7 +44,8 @@ module.exports = {
     );
     if (present.length) return;
 
-    const passwordHash = await bcrypt.hash(ADMIN.password, 12);
+    const passwordHash = await adminHash(queryInterface);
+    announce(queryInterface, 'admin');
 
     await queryInterface.bulkInsert('users', [{
       username: ADMIN.username,

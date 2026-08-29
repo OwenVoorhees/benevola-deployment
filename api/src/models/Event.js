@@ -41,7 +41,8 @@ const Event = sequelize.define('Event', {
         validate: { min: -180, max: 180 },
     },
     coverPhoto: {
-        type: DataTypes.STRING,
+        // TEXT, not STRING: image URLs run past 255 characters.
+        type: DataTypes.TEXT,
     }
 }, {
     tableName: 'events', // Explicitly telling Sequelize to use the existing 'events' table

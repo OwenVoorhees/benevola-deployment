@@ -50,12 +50,15 @@ cross-site `fetch`.
    npm run db:seed:prod
    ```
 
-   Two things to know before you do. Every seeded account shares one password,
-   which is written in the seeder files, so anyone reading the repository can
-   sign in as any of those organizations; change it in
-   `api/seeders/` first if that matters to you. And the event dates are
-   computed when the seeder runs, so they age — six months on, the listing is
-   empty again unless you reseed.
+   The accounts are created either way, but they only get working passwords if
+   you set `DEMO_PASSWORD` and `ADMIN_PASSWORD` above. Leave both unset — the
+   default — and the site is full of content nobody can sign into, which is what
+   you want on a public repository. The seeder prints which case applied.
+   `SEEDED_ACCOUNTS.md` lists every seeded email and username.
+
+   One thing that does not take care of itself: the event dates are computed
+   when the seeder runs, so they age. Six months on, the listing is empty again
+   unless you reseed.
 
 ## 2. API project
 
@@ -73,6 +76,8 @@ Environment variables:
 | `R2_ACCESS_KEY_ID`     | ″                                                        |
 | `R2_SECRET_ACCESS_KEY` | ″                                                        |
 | `R2_PUBLIC_URL`        | ″                                                        |
+| `DEMO_PASSWORD`        | optional — lets the seeded orgs and volunteers sign in  |
+| `ADMIN_PASSWORD`       | optional — creates the admin; omit and none exists      |
 
 Do **not** set `NODE_ENV` — Vercel sets it to `production` itself, and that
 flag is what turns on secure cookies and the Postgres config.

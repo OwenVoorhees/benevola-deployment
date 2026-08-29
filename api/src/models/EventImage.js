@@ -12,7 +12,8 @@ const EventImage = sequelize.define('EventImage', {
         allowNull: false,
     },
     url: {
-        type: DataTypes.STRING,
+        // TEXT, not STRING: image URLs run past 255 characters.
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     position: {
