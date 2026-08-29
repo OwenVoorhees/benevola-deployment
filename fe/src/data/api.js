@@ -102,7 +102,7 @@ export function mapEvent(d) {
     address:        d.address,
     lat:            d.latitude,
     lng:            d.longitude,
-    heroImage:      d.image ?? null,
+    heroImage:      d.coverPhoto ?? null,
     tags:           (d.Tags ?? []).map(t => t.slug),
     tagObjects:     d.Tags ?? [],
     createdAt:      d.createdAt,
@@ -301,7 +301,7 @@ export function toEventPayload(draft) {
   if (has('lat'))         out.latitude    = Number(draft.lat);
   if (has('lng'))         out.longitude   = Number(draft.lng);
   // image must be a valid URL or null — an empty string fails validation
-  if (has('heroImage'))   out.image       = draft.heroImage || null;
+  if (has('heroImage'))   out.coverPhoto  = draft.heroImage || null;
 
   return out;
 }

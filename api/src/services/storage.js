@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 /* Direct-to-storage uploads, backed by Cloudflare R2.
@@ -144,4 +144,28 @@ async function uploadBuffer({ kind, contentType, body, principal }) {
   return { key, publicUrl: `${PUBLIC_URL}/${key}` };
 }
 
-module.exports = { signUpload, uploadBuffer, isConfigured, ALLOWED_TYPES, MAX_BYTES };
+/**
+ * Remove an object, given the public URL we handed out for it.
+ *
+ * Called when a cover photo is replaced or a gallery image is deleted, so the
+ * bucket does not fill with files nothing references any more. Deliberately
+ * forgiving: a URL from somewhere else, or an object already gone, is not a
+ * reason to fail the request that triggered this.
+ */
+async function deleteObject(publicUrl) {
+  if (!isConfigured || !publicUrl) return false;
+  if (!publicUrl.startsWith(`${PUBLIC_URL}/`)) return false;
+
+  const key = publicUrl.slice(PUBLIC_URL.length + 1);
+  if (!key) return false;
+
+  try {
+    await client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+    return true;
+  } catch (err) {
+    console.error('storage.deleteObject failed:', err.message);
+    return false;
+  }
+}
+
+module.exports = { signUpload, uploadBuffer, deleteObject, isConfigured, ALLOWED_TYPES, MAX_BYTES };

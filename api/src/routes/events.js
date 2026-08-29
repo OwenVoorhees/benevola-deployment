@@ -4,16 +4,20 @@ const sequelize = require('../db/database');
 const Event = require('../models/Event');
 const Tag = require('../models/Tag');
 const User = require('../models/User');
-const { 
-    eventValidation, 
-    eventParamValidation, 
-    updateEventValidation, 
+const { EventImage } = require('../models/associations');
+const {
+    eventValidation,
+    eventParamValidation,
+    updateEventValidation,
     EventsQuerySchema,
+    galleryImageParamValidation,
+    galleryBodyValidation,
 } = require("../schemas/event.schema");
 const { createTagValidation, tagSlugValidation } = require('../schemas/tag.schema');
 const validate = require("../middleware/validate");
 const load = require("../middleware/load");
-const parseTags = require("../middleware/parseTags")
+const parseTags = require("../middleware/parseTags");
+const { deleteObject } = require("../services/storage");
 const { getEvents } = require("../services/buildEventQuery");
 const authenticate = require("../middleware/authenticate");
 const { requireUser, requireOrg, requireAdmin, verifyOwnership } = require("../middleware/authorization");
@@ -130,10 +134,10 @@ router.get('/:eid',
 router.put('/:eid',
     authenticate,
     requireOrg,
-    validate({ 
+    validate({
         params: eventParamValidation,
         body: eventValidation
-     }),
+    }),
     load(Event, {
         identifier: "eid",
         modelField: "id",
@@ -146,17 +150,21 @@ router.put('/:eid',
         const body = req.validatedBody;
 
         try {
+            if (event.coverPhoto && body.coverPhoto !== undefined && body.coverPhoto !== event.coverPhoto) {
+                await deleteObject(event.coverPhoto);
+            }
+
             const updated = await sequelize.transaction(async (t) => {
                 event.set(body);
                 await event.save({ transaction: t });
                 await event.setTags(req.parsedTags, { transaction: t });
                 const tags = await event.getTags({ transaction: t });
                 return { event, tags };
-            })
+            });
 
             return res.status(200).json({
                 message: "success",
-                "data": updated
+                data: updated
             });
         } catch (err) {
             next(err);
@@ -168,7 +176,7 @@ router.put('/:eid',
 router.patch('/:eid',
     authenticate,
     requireOrg,
-    validate({ 
+    validate({
         params: eventParamValidation,
         body: updateEventValidation
     }),
@@ -184,6 +192,10 @@ router.patch('/:eid',
         const body = req.validatedBody;
 
         try {
+            if (event.coverPhoto && body.coverPhoto !== undefined && body.coverPhoto !== event.coverPhoto) {
+                await deleteObject(event.coverPhoto);
+            }
+
             const updated = await sequelize.transaction(async (t) => {
                 if (body && Object.keys(body).length > 0) {
                     event.set(body);
@@ -198,7 +210,7 @@ router.patch('/:eid',
 
             return res.status(200).json({
                 message: "success",
-                "data": updated
+                data: updated
             });
         } catch (err) {
             next(err);
@@ -290,6 +302,72 @@ router.post('/:eid/attendees',
             if (err.name === "SequelizeUniqueConstraintError") {
               return res.status(409).json({ error: "already attending" });
             }
+            next(err);
+        }
+    }
+);
+
+/* Gallery images.
+
+   Uploading is not handled here. development had its own presigned-URL route
+   against a separate S3 bucket; this project signs uploads at
+   POST /api/uploads/sign with kind 'event-image', straight to R2. Two signing
+   paths against two buckets would be one too many, so the client signs there,
+   PUTs the file, then posts the resulting public URLs to the route below. */
+
+// ADD gallery images (record URLs the client has already uploaded)
+router.post('/:eid/gallery',
+    authenticate,
+    requireOrg,
+    validate({
+        params: eventParamValidation,
+        body: galleryBodyValidation,
+    }),
+    load(Event, {
+        identifier: "eid",
+        modelField: "id",
+        reqKey: "event"
+    }),
+    verifyOwnership(req => req.event.organizationId),
+    async (req, res, next) => {
+        const { urls } = req.validatedBody;
+        try {
+            const currentCount = await EventImage.count({ where: { eventId: req.event.id } });
+            if (currentCount + urls.length > 10) {
+                return res.status(422).json({
+                    error: `Gallery would exceed 10 images (currently has ${currentCount})`
+                });
+            }
+            const images = await EventImage.bulkCreate(
+                urls.map((url, i) => ({ eventId: req.event.id, url, position: currentCount + i }))
+            );
+            return res.status(201).json({ message: "success", data: images });
+        } catch (err) {
+            next(err);
+        }
+    }
+);
+
+// REMOVE a gallery image
+router.delete('/:eid/gallery/:imageId',
+    authenticate,
+    requireOrg,
+    validate({ params: galleryImageParamValidation }),
+    load(Event, {
+        identifier: "eid",
+        modelField: "id",
+        reqKey: "event"
+    }),
+    verifyOwnership(req => req.event.organizationId),
+    async (req, res, next) => {
+        const { imageId } = req.validatedParams;
+        try {
+            const image = await EventImage.findOne({ where: { id: imageId, eventId: req.event.id } });
+            if (!image) return res.status(404).json({ error: "Image not found" });
+            await deleteObject(image.url);
+            await image.destroy();
+            return res.status(204).end();
+        } catch (err) {
             next(err);
         }
     }

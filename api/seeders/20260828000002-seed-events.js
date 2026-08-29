@@ -339,7 +339,7 @@ module.exports = {
         address: e.address,
         latitude: e.lat,
         longitude: e.lng,
-        image: HERO[e.seed],
+        cover_photo: HERO[e.seed],
         created_at: now,
         updated_at: now,
       }))
