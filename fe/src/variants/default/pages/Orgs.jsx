@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Shell, { Avatar, Field, Input, State, Skeleton } from '../parts';
+import Shell, { Avatar, Field, Input, State, Skeleton, useFirstReveal } from '../parts';
 import { useOrgList } from '../../../data/hooks';
 import { truncate } from '../../../data/format';
 
 export default function Orgs() {
   const o = useOrgList();
+  const revealing = useFirstReveal(!o.loading);
 
   return (
     <Shell>
@@ -38,9 +39,14 @@ export default function Orgs() {
             Try a shorter search, or clear it to see everyone.
           </State>
         ) : (
-          <div className="def-list">
-            {o.filtered.map(org => (
-              <Link key={org.id} className="def-item" to={`/organizations/${org.id}`}>
+          <div className={'def-list def-fade-in' + (revealing ? ' def-stagger' : '')}>
+            {o.filtered.map((org, i) => (
+              <Link
+                key={org.id}
+                className="def-item"
+                to={`/organizations/${org.id}`}
+                style={{ '--i': i }}
+              >
                 <Avatar src={org.iconImg} name={org.name} />
                 <span className="def-item-body">
                   <span className="def-item-title">{org.name}</span>

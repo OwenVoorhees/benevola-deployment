@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useDesign } from '../../design/DesignContext';
+import { DEMO_MODE, isSample } from '../../config';
 
 /* Default primitives.
 
@@ -66,6 +67,55 @@ export const Chip = ({ children, tone }) => (
   <span className={'def-chip' + (tone ? ` def-chip--${tone}` : '')}>{children}</span>
 );
 
+/* A tick that draws itself. Used wherever something the visitor did has just
+   succeeded — the RSVP confirmation, the post-login welcome. */
+export const Check = ({ size = 18 }) => (
+  <svg
+    className="def-check"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.13" />
+    <path
+      d="M7.5 12.4l3.1 3.1 6-6.4"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+/* True for a beat after data first arrives, false forever after.
+
+   The stagger is worth having once, when a list appears out of nothing. Left
+   on, it replays on every filter keystroke and the list strobes — so the class
+   comes off as soon as the animation has had time to finish. */
+export function useFirstReveal(ready) {
+  const played = useRef(false);
+  const [revealing, setRevealing] = useState(false);
+
+  useEffect(() => {
+    if (!ready || played.current) return undefined;
+    played.current = true;
+    setRevealing(true);
+    const t = setTimeout(() => setRevealing(false), 900);
+    return () => clearTimeout(t);
+  }, [ready]);
+
+  return revealing;
+}
+
+/* Marks one listing as seeded demo content. Renders nothing when the site is
+   serving real data, so call sites do not need their own condition — and the
+   day a real organization posts, only src/config.js changes. */
+export const SampleTag = () => (
+  isSample() ? <Chip tone="sample">Sample</Chip> : null
+);
+
 export const Field = ({ label, error, hint, children }) => (
   <div className="def-row">
     {label && <label className="def-label">{label}</label>}
@@ -124,11 +174,23 @@ export const Meter = ({ value, max }) => {
   );
 };
 
-export const Avatar = ({ src, name, lg }) => (
-  <span className={'def-avatar' + (lg ? ' def-avatar--lg' : '')}>
-    {src ? <img src={src} alt="" /> : <span>{(name || '?')[0].toUpperCase()}</span>}
-  </span>
-);
+export const Avatar = ({ src, name, lg }) => {
+  /* A stored image can outlive the file it points at — an R2 object gets
+     deleted, a headshot has not been added yet — and a dead URL renders the
+     browser's broken-image glyph, which looks like a bug rather than an empty
+     slot. Fall back to the initial instead. Reset on src so a list that
+     re-renders with different people does not keep a stale failure. */
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+
+  return (
+    <span className={'def-avatar' + (lg ? ' def-avatar--lg' : '')}>
+      {src && !failed
+        ? <img src={src} alt="" onError={() => setFailed(true)} />
+        : <span>{(name || '?')[0].toUpperCase()}</span>}
+    </span>
+  );
+};
 
 /** Date block used down the left of every event row. */
 export const DateBlock = ({ iso }) => {
@@ -245,7 +307,19 @@ export default function Shell({ children }) {
             </div>
           </div>
         </div>
-        <div className="def-foot-base">Benevola · Built for good</div>
+        <div className="def-foot-base">
+          {DEMO_MODE && (
+            /* Not dismissible on purpose: a banner people can close stops
+               framing the site the moment they close it. */
+            <p className="def-note def-foot-notice">
+              <b>This is a student project, not a running service.</b> Benevola was
+              built at NC State to learn on. Every organization and event listed here
+              is sample data created by us — none of them are real, and nothing posted
+              here is an event you can attend.
+            </p>
+          )}
+          <span>Benevola · Built for good</span>
+        </div>
       </footer>
     </div>
   );

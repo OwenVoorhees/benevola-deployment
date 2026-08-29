@@ -204,7 +204,6 @@ router.post('/:oid/events',
         const org = req.org;
         const body = req.validatedBody;
 
-        console.log(req.tags);
 
         try {
             const updated = await sequelize.transaction(async (t) => {

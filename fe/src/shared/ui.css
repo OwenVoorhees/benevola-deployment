@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════
    Theme bridge.
 
-   A handful of surfaces (posting an event, password recovery) are the same
-   task no matter which design is active, so they are written once and read
-   their colour, type and shape from whichever theme is mounted.
+   Some surfaces (posting an event) are the same task no matter which design is
+   active, so they are written once and read their colour, type and shape from
+   whichever theme is mounted.
 
    Each design maps its own tokens onto this neutral --ui-* set. Adding a
    design means adding one block here; the shared pages never change.

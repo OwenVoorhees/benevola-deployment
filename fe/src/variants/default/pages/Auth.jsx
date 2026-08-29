@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import Shell, { Btn, Field, Input, Panel } from '../parts';
+import Shell, { Btn, Field, Input, Panel, Check } from '../parts';
 import { PasswordInput } from '../../../shared/parts';
 import { useAuth } from '../../../context/AuthContext';
 import { API } from '../../../data/api';
@@ -40,6 +40,40 @@ function Frame({ title, sub, children }) {
   );
 }
 
+/* Where someone lands after signing in, and what to call them. Organizations
+   and volunteers have different profile routes and different name fields. */
+function landing(me) {
+  const org = me.kind === 'org';
+  return {
+    name: org ? me.info.name : (me.info.displayName || me.info.username),
+    to:   org ? `/organizations/${me.info.id}` : `/volunteer/${me.info.id}`,
+  };
+}
+
+/* Held for a beat before the redirect so the sign-in registers as having
+   worked. Long enough to read, short enough not to feel like a wait. */
+const WELCOME_MS = 1250;
+
+function Welcome({ greeting, name, sub }) {
+  return (
+    <div className="def-welcome">
+      <Check size={34} />
+      <h2>{greeting}, {name}</h2>
+      <p>{sub}</p>
+    </div>
+  );
+}
+
+/* Runs the redirect once a welcome is showing. Kept as a hook so Login and
+   Signup cannot drift apart on the timing. */
+function useWelcomeRedirect(welcome, navigate) {
+  useEffect(() => {
+    if (!welcome) return undefined;
+    const t = setTimeout(() => navigate(welcome.to), WELCOME_MS);
+    return () => clearTimeout(t);
+  }, [welcome, navigate]);
+}
+
 export function Login() {
   const { refresh } = useAuth();
   const navigate    = useNavigate();
@@ -48,6 +82,9 @@ export function Login() {
   const [errors, setErrors]     = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading]   = useState(false);
+  const [welcome, setWelcome]   = useState(null);
+
+  useWelcomeRedirect(welcome, navigate);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -93,7 +130,9 @@ export function Login() {
         setLoading(false);
         return;
       }
-      navigate('/');
+      /* Stays in the loading state on purpose: the form must not become
+         interactive again behind the welcome. */
+      setWelcome(landing(me));
     } catch {
       setApiError('Could not reach the server. Check your connection.');
       setLoading(false);
@@ -102,6 +141,10 @@ export function Login() {
 
   return (
     <Frame title="Log in" sub="Pick up wherever you left off.">
+      {welcome ? (
+        <Welcome greeting="Welcome back" name={welcome.name} sub="Taking you to your profile…" />
+      ) : (
+      <>
       <Switch role={role} onChange={r => { setRole(r); setErrors({}); setApiError(''); }} />
 
       <form onSubmit={submit} noValidate>
@@ -125,10 +168,6 @@ export function Login() {
           />
         </Field>
 
-        <Link className="def-link" style={{ fontSize: '0.84rem' }} to="/forgot-password">
-          Forgot your password?
-        </Link>
-
         {apiError && <p className="def-field-err" style={{ marginTop: 14 }}>{apiError}</p>}
 
         <Btn block type="submit" disabled={loading} style={{ marginTop: 20 }}>
@@ -139,6 +178,8 @@ export function Login() {
       <p className="def-muted" style={{ marginTop: 20, textAlign: 'center' }}>
         No account yet? <Link className="def-link" to="/signup">Create one</Link>
       </p>
+      </>
+      )}
     </Frame>
   );
 }
@@ -155,6 +196,9 @@ export function Signup() {
   const [errors, setErrors]     = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading]   = useState(false);
+  const [welcome, setWelcome]   = useState(null);
+
+  useWelcomeRedirect(welcome, navigate);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -203,7 +247,7 @@ export function Signup() {
         setLoading(false);
         return;
       }
-      navigate('/');
+      setWelcome(landing(me));
     } catch {
       setApiError('Could not reach the server. Check your connection.');
       setLoading(false);
@@ -217,6 +261,14 @@ export function Signup() {
         ? 'Post shifts and manage your volunteer roster.'
         : 'Free to join. About a minute of your time.'}
     >
+      {welcome ? (
+        <Welcome
+          greeting="Welcome to Benevola"
+          name={welcome.name}
+          sub="Setting up your profile…"
+        />
+      ) : (
+      <>
       <Switch role={role} onChange={r => { setRole(r); setErrors({}); }} />
 
       <form onSubmit={submit} noValidate>
@@ -274,6 +326,8 @@ export function Signup() {
       <p className="def-muted" style={{ marginTop: 20, textAlign: 'center' }}>
         Already have an account? <Link className="def-link" to="/login">Log in</Link>
       </p>
+      </>
+      )}
     </Frame>
   );
 }

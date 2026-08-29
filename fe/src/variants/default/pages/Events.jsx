@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Shell, { Btn, Chip, DateBlock, Field, Input, Panel, State, Skeleton } from '../parts';
+import Shell, {
+  Btn, Chip, DateBlock, Field, Input, Panel, State, Skeleton, useFirstReveal,
+} from '../parts';
 import { useEventsSearch, useTags } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
 
@@ -8,11 +10,11 @@ import { formatDuration, shortAddress } from '../../../data/format';
    re-queries report through `refreshing` rather than `loading`, so the list
    stays on screen instead of collapsing into skeletons between keystrokes. */
 
-function Row({ event, orgName }) {
+function Row({ event, orgName, index = 0 }) {
   const full = event.spotsLeft === 0;
 
   return (
-    <Link className="def-item" to={`/events/${event.id}`}>
+    <Link className="def-item" to={`/events/${event.id}`} style={{ '--i': index }}>
       <span className="def-lead">
         <DateBlock iso={event.date} />
         {event.heroImage && <img className="def-thumb" src={event.heroImage} alt="" loading="lazy" />}
@@ -37,6 +39,9 @@ function Row({ event, orgName }) {
 export default function Events() {
   const s    = useEventsSearch({ live: true });
   const tags = useTags();
+  /* Stagger the first list only. This page filters as you type, and replaying
+     the animation on every keystroke turns the results into a strobe. */
+  const revealing = useFirstReveal(!s.loading);
 
   return (
     <Shell>
@@ -73,9 +78,14 @@ export default function Events() {
               </State>
             ) : (
               <>
-                <div className="def-list">
-                  {s.events.map(ev => (
-                    <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} />
+                <div className={'def-list def-fade-in' + (revealing ? ' def-stagger' : '')}>
+                  {s.events.map((ev, i) => (
+                    <Row
+                      key={ev.id}
+                      event={ev}
+                      orgName={s.orgNames[ev.organizationId]}
+                      index={i}
+                    />
                   ))}
                 </div>
 

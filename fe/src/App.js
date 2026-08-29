@@ -3,12 +3,11 @@ import ScrollToTop from './Components/ScrollToTop';
 import RequireAuth from './Components/RequireAuth';
 import { AuthProvider } from './context/AuthContext';
 import { DesignProvider } from './design/DesignContext';
-import DesignSwitcher from './design/DesignSwitcher';
 import Surface from './design/Surface';
 import './styles/App.css';
 
-/* Routes name a surface; the active design decides which component renders.
-   See src/design/config.js to lock in one design permanently. */
+/* Routes name a surface; the design registry decides which component renders
+   it. The site is locked to the 'default' design in src/design/config.js. */
 
 function App() {
   return (
@@ -20,8 +19,6 @@ function App() {
             <Route path="/"                  element={<Surface name="Landing" />} />
             <Route path="/login"             element={<Surface name="Login" />} />
             <Route path="/signup"            element={<Surface name="Signup" />} />
-            <Route path="/forgot-password"   element={<Surface name="ForgotPassword" />} />
-            <Route path="/reset-password"    element={<Surface name="ResetPassword" />} />
             <Route path="/about"             element={<Surface name="About" />} />
             <Route path="/events"            element={<Surface name="Events" />} />
             <Route path="/events/:id"        element={<Surface name="Event" />} />
@@ -38,7 +35,6 @@ function App() {
             <Route path="/volunteer/:id"     element={<Surface name="Volunteer" />} />
             <Route path="*"                  element={<Surface name="NotFound" />} />
           </Routes>
-          <DesignSwitcher />
         </Router>
       </DesignProvider>
     </AuthProvider>

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Shell, { ArrowLink, Btn, Chip, DateBlock, Eyebrow, State, Skeleton } from '../parts';
+import Shell, {
+  ArrowLink, Btn, Chip, DateBlock, Eyebrow, State, Skeleton, useFirstReveal,
+} from '../parts';
 import { useEventsSearch } from '../../../data/hooks';
 import { formatDuration, shortAddress } from '../../../data/format';
 
@@ -8,15 +10,24 @@ import { formatDuration, shortAddress } from '../../../data/format';
    doing? The hero preview shows live openings rather than a stock mockup, so
    the proof and the product are the same object. */
 
+/* The cause vocabulary from the tag list, trimmed to the ones that read as a
+   reason to show up rather than a logistic. Doubled at render so the band's
+   -50% loop is seamless. */
+const CAUSES = [
+  'Food Security', 'Environment', 'Animal Welfare', 'Education',
+  'Tutoring', 'Mentoring', 'Housing', 'Health & Wellness',
+  'Community Development', 'Social Justice', 'Seniors', 'Youth',
+];
+
 const Tick = () => (
   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
     <path d="M3 8.4l3.2 3.2L13 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-function Row({ event, orgName, compact }) {
+function Row({ event, orgName, compact, index = 0 }) {
   return (
-    <Link className="def-item" to={`/events/${event.id}`}>
+    <Link className="def-item" to={`/events/${event.id}`} style={{ '--i': index }}>
       <span className="def-lead">
         <DateBlock iso={event.date} />
         {!compact && event.heroImage && (
@@ -42,6 +53,8 @@ function Row({ event, orgName, compact }) {
 
 export default function Landing() {
   const s = useEventsSearch();
+  /* Stagger the first list only — see useFirstReveal. */
+  const revealing = useFirstReveal(!s.loading);
   const soon = s.events.slice(0, 6);
 
   return (
@@ -82,6 +95,15 @@ export default function Landing() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Causes running along the foot of the hero */}
+        <div className="def-ticker" aria-hidden="true">
+          <div className="def-ticker-track">
+            {[...CAUSES, ...CAUSES].map((cause, i) => (
+              <span className="def-ticker-item" key={i}>{cause}</span>
+            ))}
           </div>
         </div>
       </section>
@@ -129,8 +151,10 @@ export default function Landing() {
             </State>
           ) : (
             <>
-              <div className="def-list">
-                {soon.map(ev => <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} />)}
+              <div className={'def-list def-fade-in' + (revealing ? ' def-stagger' : '')}>
+                {soon.map((ev, i) => (
+                  <Row key={ev.id} event={ev} orgName={s.orgNames[ev.organizationId]} index={i} />
+                ))}
               </div>
               <div style={{ marginTop: 26 }}>
                 <ArrowLink to="/events">See every opening</ArrowLink>
@@ -178,7 +202,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="def-section" style={{ paddingTop: 0 }}>
+      <section className="def-section">
         <div className="def-wrap">
           <div className="def-cta">
             <h2>Somebody nearby needs a hand this weekend.</h2>

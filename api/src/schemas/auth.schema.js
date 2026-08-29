@@ -25,20 +25,8 @@ const googleAuthValidation = z.object({
 
 // Which account type the address belongs to — users and orgs are separate
 // tables and may legitimately share an email address.
-const forgotPasswordValidation = z.object({
-    email: z.email(),
-    role: z.enum(["user", "org"]).default("user"),
-}).strict();
-
-const resetPasswordValidation = z.object({
-    token: z.string().min(1),
-    password: z.string().min(8),
-}).strict();
-
 module.exports = {
     registerValidation,
     loginValidation,
     googleAuthValidation,
-    forgotPasswordValidation,
-    resetPasswordValidation,
 };

@@ -1,7 +1,12 @@
 /* Thin API layer. Every variant talks to the backend through here, so a
    change to an endpoint is a one-file change rather than a per-design one. */
 
-export const API = process.env.REACT_APP_API_URL;
+/* Empty by default, which makes every URL below relative — the frontend and
+   the API are served from one origin in production (see vercel.json), so the
+   session cookie stays first-party and there is no CORS in play. Set
+   REACT_APP_API_URL only to point at an API on some other host, e.g. when
+   running the two apart in development. */
+export const API = process.env.REACT_APP_API_URL || '';
 
 /* ── Request plumbing ────────────────────────────────────────────────
    The API authenticates with a session cookie, so every request to our own
@@ -233,24 +238,6 @@ export async function fetchMe() {
     if (err instanceof ApiError && err.status === 401) return null;
     throw err;
   }
-}
-
-/* ── Password reset ──────────────────────────────────────────────────
-   The API deliberately answers the same way whether or not the address is
-   registered, so there is nothing here to branch on. */
-
-export async function requestPasswordReset(email, role) {
-  return request(`${API}/api/auth/forgot-password`, {
-    method: 'POST',
-    body: { email, role },
-  });
-}
-
-export async function resetPassword(token, password) {
-  return request(`${API}/api/auth/reset-password`, {
-    method: 'POST',
-    body: { token, password },
-  });
 }
 
 /* ── Image uploads ───────────────────────────────────────────────────

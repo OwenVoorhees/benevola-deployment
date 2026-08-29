@@ -5,9 +5,9 @@
    The stylesheet is imported here so that deleting this folder removes the
    design completely: nothing outside src/design/registry.js knows it exists.
 
-   EventNew, ForgotPassword and ResetPassword come from src/shared: they are
-   the same job in every design and adopt this theme's tokens through the
-   --ui-* bridge in src/shared/ui.css. */
+   EventNew comes from src/shared: it is the same job in every design and
+   adopts this theme's tokens through the --ui-* bridge in
+   src/shared/ui.css. */
 
 import './default.css';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Shell, {
-  Avatar, Btn, Chip, Crumbs, Field, Input, Area, Meter, Panel, State, Skeleton, Toast,
+  Avatar, Btn, Check, Chip, Crumbs, Field, Input, Area, Meter, Panel, SampleTag, State, Skeleton, Toast,
 } from '../parts';
 import DangerZone from '../../../Components/DangerZone';
 import { useEventDetail, useTags } from '../../../data/hooks';
@@ -107,11 +107,14 @@ export default function Event() {
               </>
             ) : (
               <>
-                {event.tags.length > 0 && (
-                  <div className="def-chiprow" style={{ marginBottom: 22 }}>
-                    {event.tags.map(slug => <Chip key={slug} tone="accent">{tags.nameOf(slug)}</Chip>)}
-                  </div>
-                )}
+                {/* The one place the Sample tag appears. This is where someone
+                    decides whether to turn up, so it is where the listing has to
+                    say it is not real — browsing does not need labelling on every
+                    row. */}
+                <div className="def-chiprow" style={{ marginBottom: 22 }}>
+                  <SampleTag />
+                  {event.tags.map(slug => <Chip key={slug} tone="accent">{tags.nameOf(slug)}</Chip>)}
+                </div>
 
                 <div className="def-prose">
                   {(event.description || 'No description was posted for this event.')
@@ -173,11 +176,14 @@ export default function Event() {
                 {e.rsvped ? 'Cancel RSVP' : full ? 'Event is full' : 'Sign up'}
               </Btn>
 
-              {e.rsvped && (
-                <p className="def-muted" style={{ marginTop: 11, textAlign: 'center' }}>
+              {/* Always mounted, collapsed when it does not apply: that way
+                  cancelling shows the line leaving instead of blinking out. */}
+              <div className={'def-collapse' + (e.rsvped ? ' is-on' : '')} aria-hidden={!e.rsvped}>
+                <p className="def-confirm" style={{ margin: 0 }}>
+                  {e.rsvped && <Check />}
                   You are on the roster.
                 </p>
-              )}
+              </div>
             </Panel>
 
             {/* The roster is the organizer's view; the API serves it to them alone. */}

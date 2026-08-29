@@ -1,7 +1,27 @@
-const { Op, fn, col, literal, where } = require("sequelize");
+const { Op, fn, col, cast, literal, where } = require("sequelize");
 const sequelize = require("../db/database");
 const Tag = require("../models/Tag")
 const Event = require("../models/Event")
+
+/* Dev runs on SQLite and production on Postgres, and the two disagree on
+   exactly the things this file leans on. Both differences below are silent —
+   they return wrong rows rather than raising — so they are resolved once here
+   from the live dialect instead of being assumed. */
+const IS_POSTGRES = sequelize.getDialect() === "postgres";
+
+// SQLite's LIKE is case-insensitive for ASCII; Postgres's is not, and there
+// searching "Food" would stop matching "food bank". ILIKE restores it.
+const LIKE = IS_POSTGRES ? "ILIKE" : "LIKE";
+
+/* date()/time() are SQLite built-ins with no Postgres equivalent, so the same
+   idea is spelled as a cast there. Note a cast is not a portable substitute in
+   the other direction: SQLite has no DATE type and would coerce the value to a
+   number, quietly turning a timestamp into its leading year. */
+const dateOf = (column) =>
+    IS_POSTGRES ? cast(col(column), "DATE") : fn("date", col(column));
+
+const timeOf = (column) =>
+    IS_POSTGRES ? cast(col(column), "TIME") : fn("time", col(column));
 
 function combineDateAndTime(dateStr, timeStr) {
     return new Date(`${dateStr}T${timeStr}:00.000`);
@@ -12,8 +32,7 @@ function toHHmmss(timeHHmm) {
 }
 
 // `%` and `_` are LIKE wildcards, so escape any the user actually typed —
-// searching for "50%" should look for "50%", not match every row. SQLite's
-// LIKE is already case-insensitive for ASCII, which is what we want here.
+// searching for "50%" should look for "50%", not match every row.
 function likePattern(term) {
     const escaped = term.replace(/[\\%_]/g, (ch) => `\\${ch}`);
     return sequelize.escape(`%${escaped}%`);
@@ -25,7 +44,7 @@ function likePattern(term) {
 // so they are matched with a subquery rather than a second include.
 function keywordClause(term) {
     const pattern = likePattern(term);
-    const like = (column) => literal(`${column} LIKE ${pattern} ESCAPE '\\'`);
+    const like = (column) => literal(`${column} ${LIKE} ${pattern} ESCAPE '\\'`);
 
     return {
         [Op.or]: [
@@ -35,8 +54,8 @@ function keywordClause(term) {
             literal(`"Event"."id" IN (
                 SELECT et.event_id FROM event_tags et
                 JOIN tags t ON t.id = et.tag_id
-                WHERE t.name LIKE ${pattern} ESCAPE '\\'
-                   OR t.slug LIKE ${pattern} ESCAPE '\\'
+                WHERE t.name ${LIKE} ${pattern} ESCAPE '\\'
+                   OR t.slug ${LIKE} ${pattern} ESCAPE '\\'
             )`),
         ],
     };
@@ -58,13 +77,13 @@ function buildEventBaseOptions(q) {
 
   // date filters
     if (q.date) {
-        and.push(where(fn("date", col("date")), q.date));
+        and.push(where(dateOf("date"), q.date));
     } else {
         if (q.afterDate) {
-            and.push(where(fn("date", col("date")), { [Op.gte]: q.afterDate }));
+            and.push(where(dateOf("date"), { [Op.gte]: q.afterDate }));
         }
         if (q.beforeDate) {
-            and.push(where(fn("date", col("date")), { [Op.lte]: q.beforeDate }));
+            and.push(where(dateOf("date"), { [Op.lte]: q.beforeDate }));
         }
     }
 
@@ -80,10 +99,10 @@ function buildEventBaseOptions(q) {
         }
     } else {
         if (q.afterTime) {
-            and.push(where(fn("time", col("date")), { [Op.gte]: toHHmmss(q.afterTime) }));
+            and.push(where(timeOf("date"), { [Op.gte]: toHHmmss(q.afterTime) }));
         }
         if (q.beforeTime) {
-            and.push(where(fn("time", col("date")), { [Op.lte]: toHHmmss(q.beforeTime) }));
+            and.push(where(timeOf("date"), { [Op.lte]: toHHmmss(q.beforeTime) }));
         }
     }
 
