@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <script>
       /* Stamp the design and theme before React boots, so the first frame is
-         not painted in the wrong mode. Light/dark is not a setting — it follows
-         the operating system — so this reads the media query rather than
-         storage, and React re-stamps the same value a moment later.
+         not painted in the wrong mode. Light only for now — this used to read
+         prefers-color-scheme; see src/design/DesignContext.jsx, which has to
+         agree with whatever this says.
 
          The colours are deliberately not set here: they live in
          variants/default/css/tokens.css, and a stylesheet is render-blocking,
@@ -15,11 +15,7 @@
       (function() {
         var el = document.documentElement;
         el.setAttribute('data-design', 'default');
-        var dark = false;
-        try {
-          dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        } catch (e) { /* no matchMedia — light is the design's own default */ }
-        el.setAttribute('data-theme', dark ? 'dark' : 'light');
+        el.setAttribute('data-theme', 'light');
       })();
     </script>
     <!-- SVG first: browsers that support it prefer it and it stays crisp at any

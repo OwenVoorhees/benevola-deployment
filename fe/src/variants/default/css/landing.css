@@ -22,6 +22,8 @@
   transform-origin: top left;
 }
 
+/* DORMANT: the site is pinned to light, so nothing sets data-theme='dark'.
+   Kept, not deleted — see src/design/DesignContext.jsx. */
 [data-theme='dark'] .def-hero::before { opacity: 0.2; }
 
 .def-hero-inner {

@@ -121,6 +121,8 @@
   --def-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* DORMANT: the site is pinned to light, so nothing sets data-theme='dark'.
+   Kept, not deleted — see src/design/DesignContext.jsx. */
 [data-design='default'][data-theme='dark'] {
   color-scheme: dark;
 

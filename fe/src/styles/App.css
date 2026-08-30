@@ -20,6 +20,8 @@
 }
 
 /* ── Dark mode overrides ─────────────────────────────────────────── */
+/* DORMANT: the site is pinned to light, so nothing sets data-theme='dark'.
+   Kept, not deleted — see src/design/DesignContext.jsx. */
 [data-theme="dark"] {
   --gray-50:    #1a2018;
   --gray-100:   #161c17;

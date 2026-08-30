@@ -1,65 +1,36 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { LOCKED, DEFAULT_DESIGN } from './config';
 
 /* Holds the two things the shell still needs to know: which design is mounted
-   (one, fixed) and whether the visitor is in light or dark mode.
+   (one, fixed) and which theme it is in (light, fixed).
 
    The design switcher and its colour picker were removed for deployment, so
-   there is no setter for the design any more: it is fixed in ./config.js and
-   the brand colours live in the stylesheet, at
-   variants/default/css/tokens.css.
+   there is no setter for the design: it is fixed in ./config.js and the brand
+   colours live in the stylesheet, at variants/default/css/tokens.css.
 
-   Light/dark is not a setting either. It follows the operating system, live —
-   there is no header toggle and nothing is persisted, so a visitor who flips
-   their machine to dark at sunset sees the site follow without touching it. */
+   LIGHT ONLY, FOR NOW. The site did follow the operating system's light/dark
+   preference; it is pinned to light while the dark palette is left alone. The
+   dark rules are all still in the stylesheets, keyed on [data-theme='dark'],
+   and nothing sets that attribute any more, so they are dormant rather than
+   deleted. To bring the behaviour back, restore the matchMedia subscription
+   here and the matching one in public/index.html — the CSS needs no changes.
+   Both places have to agree, or the first painted frame is the wrong one. */
 
 const DesignContext = createContext(null);
 
 const DESIGN = LOCKED ?? DEFAULT_DESIGN;
-
-const DARK_QUERY = '(prefers-color-scheme: dark)';
-
-function systemTheme() {
-  try {
-    return window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light';
-  } catch {
-    /* no matchMedia — jsdom without a stub, an ancient browser. Light is the
-       design's own default, so falling back to it changes nothing. */
-    return 'light';
-  }
-}
+const THEME  = 'light';
 
 export function DesignProvider({ children }) {
-  const [theme, setTheme] = useState(systemTheme);
-
   useEffect(() => {
-    document.documentElement.setAttribute('data-design', DESIGN);
+    const el = document.documentElement;
+    el.setAttribute('data-design', DESIGN);
+    el.setAttribute('data-theme', THEME);
   }, []);
 
-  /* Subscribe rather than read once: the OS preference can change while the
-     tab is open (a scheduled switch at dusk, someone toggling it by hand). */
-  useEffect(() => {
-    let mq;
-    try { mq = window.matchMedia(DARK_QUERY); } catch { return undefined; }
-
-    const onChange = e => setTheme(e.matches ? 'dark' : 'light');
-    setTheme(mq.matches ? 'dark' : 'light');
-
-    /* addListener is the Safari < 14 spelling; it is still the only one there. */
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-    else mq.addListener(onChange);
-
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
-      else mq.removeListener(onChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  const value = useMemo(() => ({ design: DESIGN, theme }), [theme]);
+  /* Constant, but still built through useMemo so the value is referentially
+     stable and consumers do not re-render on every parent render. */
+  const value = useMemo(() => ({ design: DESIGN, theme: THEME }), []);
 
   return <DesignContext.Provider value={value}>{children}</DesignContext.Provider>;
 }
