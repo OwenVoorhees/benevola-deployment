@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Shell, { Avatar, Field, Input, State, Skeleton, useFirstReveal } from '../parts';
+import Shell, { Avatar, Field, Input, SampleTag, State, Skeleton, useFirstReveal } from '../parts';
 import { useOrgList } from '../../../data/hooks';
 import { truncate } from '../../../data/format';
 
@@ -47,7 +47,7 @@ export default function Orgs() {
                 to={`/organizations/${org.id}`}
                 style={{ '--i': i }}
               >
-                <Avatar src={org.iconImg} name={org.name} />
+                <Avatar org src={org.iconImg} name={org.name} />
                 <span className="def-item-body">
                   <span className="def-item-title">{org.name}</span>
                   <span className="def-item-meta">
@@ -55,7 +55,10 @@ export default function Orgs() {
                     {org.description && <span>{truncate(org.description, 70)}</span>}
                   </span>
                 </span>
-                <span className="def-muted">View</span>
+                <span className="def-item-end">
+                  <SampleTag />
+                  <span className="def-muted">View</span>
+                </span>
               </Link>
             ))}
           </div>

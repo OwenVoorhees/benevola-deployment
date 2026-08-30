@@ -100,8 +100,11 @@
 [data-design='prototype'] .ui-eyebrow,
 [data-design='prototype'] .ui-foot-link a { color: var(--ptp-accent); }
 
-/* Both tunable designs use pill buttons, and the shared pages should match. */
+/* The shipped design uses rounded-square buttons, and the shared pages should
+   match; the archived prototype keeps its pill. */
 [data-design='default'] .ui-btn,
+[data-design='default'] .ui-chip,
+[data-design='default'] .ui-tagpick button { border-radius: var(--def-r-btn); }
 [data-design='prototype'] .ui-btn { border-radius: 999px; }
 
 [data-design='vesper'] {
@@ -239,12 +242,13 @@
 
 /* ── Type ───────────────────────────────────────────────────────────── */
 
+/* Sentence case rather than tracked-out capitals — see .def-eyebrow, which
+   made the same move for the same reason. */
 .ui-eyebrow {
   display: block;
-  font-family: var(--ui-font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 0.83rem;
+  font-weight: 620;
+  letter-spacing: -0.005em;
   color: var(--ui-accent);
   margin-bottom: 10px;
 }
@@ -278,10 +282,9 @@
 .ui-label {
   display: block;
   margin-bottom: 7px;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
   color: var(--ui-ink-2);
 }
 

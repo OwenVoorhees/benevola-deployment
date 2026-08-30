@@ -9,11 +9,14 @@ import { DEMO_MODE, isSample } from '../../config';
    which the switcher writes onto :root. Nothing hardcodes a hue, so the whole
    theme re-skins the moment someone drags the picker. */
 
-export const Mark = ({ size = 20 }) => (
+/* `fill` is a parameter because the mark appears two ways round: brand green on
+   the page, and white on a brand ground wherever it stands in for a picture an
+   organization has not uploaded. */
+export const Mark = ({ size = 20, fill = 'var(--def-pri)' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
       d="M20 4C10 4 4 9 4 16c0 1.6.4 3 1.1 4.2C8 14 13 11 18 10c-4 2.4-7.5 6-9.7 10.8 1 .3 2 .5 3.2.5 6.5 0 9.5-6 8.5-17.3Z"
-      fill="var(--def-pri)"
+      fill={fill}
     />
   </svg>
 );
@@ -45,6 +48,11 @@ export const ArrowLink = ({ to, children }) => (
 );
 
 export const Eyebrow = ({ children }) => <span className="def-eyebrow">{children}</span>;
+
+/* A lead-in that talks to the reader rather than labelling the section. Set in
+   the display serif — see .def-kicker — so it carries on its own without the
+   tracked-out capitals an eyebrow used to lean on. */
+export const Kicker = ({ children }) => <span className="def-kicker">{children}</span>;
 
 export const Panel = ({ children, pad, float, className = '', ...rest }) => (
   <div
@@ -167,7 +175,13 @@ export const Meter = ({ value, max }) => {
   );
 };
 
-export const Avatar = ({ src, name, lg }) => {
+/* `org` switches the slot from a person's to an organization's: a rounded tile
+   rather than a disc, because a logo cropped to a circle loses its corners,
+   and the Benevola mark rather than an initial when nothing has been
+   uploaded. A letter in a tinted circle reads as a missing file; the mark on a
+   solid brand ground reads as a deliberate default. People keep the initial —
+   theirs is a name, and a site logo standing in for a face would be worse. */
+export const Avatar = ({ src, name, lg, org }) => {
   /* A stored image can outlive the file it points at — an R2 object gets
      deleted, a headshot has not been added yet — and a dead URL renders the
      browser's broken-image glyph, which looks like a bug rather than an empty
@@ -176,12 +190,50 @@ export const Avatar = ({ src, name, lg }) => {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [src]);
 
+  const has = Boolean(src) && !failed;
+
   return (
-    <span className={'def-avatar' + (lg ? ' def-avatar--lg' : '')}>
-      {src && !failed
-        ? <img src={src} alt="" onError={() => setFailed(true)} />
-        : <span>{(name || '?')[0].toUpperCase()}</span>}
+    <span
+      className={[
+        'def-avatar',
+        lg ? 'def-avatar--lg' : '',
+        org ? 'def-avatar--org' : '',
+        org && !has ? 'def-avatar--mark' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      {has ? (
+        <img src={src} alt="" onError={() => setFailed(true)} />
+      ) : org ? (
+        /* Sized by CSS, not by this number — see .def-avatar--mark svg. */
+        <Mark size={24} fill="var(--def-pri-ink)" />
+      ) : (
+        <span>{(name || '?')[0].toUpperCase()}</span>
+      )}
     </span>
+  );
+};
+
+/* An organization's banner, which every organization has whether or not one
+   was uploaded. A missing file, a dead URL or a blank field all land on the
+   same flat brand band with the mark set into it — a placeholder that looks
+   chosen, instead of a gap at the top of the page or the browser's
+   broken-image glyph. */
+export const Banner = ({ src, alt = '' }) => {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+
+  if (src && !failed) {
+    return (
+      <div className="def-banner">
+        <img src={src} alt={alt} onError={() => setFailed(true)} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="def-banner def-banner--default" aria-hidden="true">
+      <Mark size={92} fill="var(--def-pri-ink)" />
+    </div>
   );
 };
 

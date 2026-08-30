@@ -101,6 +101,12 @@
 
   --def-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 
+  /* The small labels on this site used to be tracked-out capitals. They are
+     sentence case now, which means they no longer separate themselves from
+     the body text by shape alone — so the one lead-in that still has to
+     stand apart borrows a serif instead. See .def-kicker. */
+  --def-font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+
   /* Shadows are tinted with the brand hue rather than neutral black, which is
      what keeps soft cards from looking grey and dirty on a tinted ground. */
   --def-shadow:    0 1px 2px oklch(from var(--brand-primary) 30% 0.03 h / 0.05),
@@ -111,6 +117,11 @@
   --def-r:    10px;
   --def-r-lg: 16px;
   --def-r-sm: 7px;
+
+  /* Buttons and chips are rounded squares, not pills: at this radius the
+     corner is soft enough to match the cards but the shape still reads as a
+     rectangle, which is what keeps a row of actions on a grid. */
+  --def-r-btn: 8px;
 
   /* Native widgets — the date pickers in the filter rail, the clear button on
      the search field, scrollbars — are painted by the browser, not by us.

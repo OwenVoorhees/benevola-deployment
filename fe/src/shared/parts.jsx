@@ -232,24 +232,46 @@ export function TagPicker({ tags, loading, selected, onToggle }) {
 
 /* ── Map ────────────────────────────────────────────────────────────── */
 
-const PIN = L.divIcon({
+/* The marker, in the brand green.
+
+   A divIcon is a plain DOM node, so the brand variable on :root cascades into
+   it the same as anywhere else — the literal after the comma is only there for
+   the case where the stylesheet has not landed yet. The shape is the ordinary
+   teardrop rather than anything clever: on a street map at this size a pin has
+   to be read at a glance against roads, parks and labels, and the outline plus
+   the white eye is what carries it over a busy tile.
+
+   `filled` is the difference between "it is here" and "it is somewhere around
+   here". A hollow pin marks the fallback centre, where we know the city but
+   not the address, so the map always carries a marker without the map ever
+   claiming a corner it cannot back up. */
+const pinIcon = (filled) => L.divIcon({
   className: '',
-  html: `<svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
-           <path d="M12 31V15" stroke="currentColor" stroke-width="1.6"/>
-           <circle cx="12" cy="9" r="7.6" fill="none" stroke="#c2410c" stroke-width="2.2"/>
-           <circle cx="12" cy="9" r="2.4" fill="#c2410c"/>
+  html: `<svg width="26" height="36" viewBox="0 0 26 36" xmlns="http://www.w3.org/2000/svg">
+           <path d="M13 34.5C13 34.5 24 21.6 24 13A11 11 0 1 0 2 13c0 8.6 11 21.5 11 21.5Z"
+                 fill="${filled ? 'var(--brand-primary, #157C4F)' : 'var(--def-panel, #fbfefc)'}"
+                 stroke="var(--brand-primary, #157C4F)"
+                 stroke-width="2"
+                 stroke-linejoin="round"
+                 ${filled ? '' : 'stroke-dasharray="3.5 3"'}/>
+           <circle cx="13" cy="13" r="4.1"
+                   fill="${filled ? '#fff' : 'var(--brand-primary, #157C4F)'}"/>
          </svg>`,
-  iconSize: [24, 32],
-  iconAnchor: [12, 32],
+  iconSize:   [26, 36],
+  iconAnchor: [13, 35],
 });
+
+const PIN        = pinIcon(true);
+const PIN_APPROX = pinIcon(false);
 
 /* Downtown Raleigh, at a zoom that frames the city rather than the state.
 
    Every seeded organization and event is in the Triangle, so a record that
    arrives without coordinates — an older row, an address the geocoder could
    not place — still gets a map of somewhere plausible instead of a grey
-   rectangle or the whole continental US. The pin is what is withheld in that
-   case, not the map: see MapView. */
+   rectangle or the whole continental US. What is withheld in that case is the
+   claim, not the marker: MapView pins the fallback centre with the hollow pin,
+   which says "around here" rather than naming a corner. */
 const FALLBACK_CENTER = [35.7796, -78.6382];
 const FALLBACK_ZOOM   = 11;
 
@@ -335,7 +357,14 @@ export function MapView({ lat, lng, zoom = 14 }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {has && <Marker position={[lat, lng]} icon={PIN} />}
+      {/* Always marked. A known place gets the solid pin on its coordinates; a
+          record that arrived without any gets the hollow one on the fallback
+          centre, which says "around here" rather than pretending to an
+          address. */}
+      <Marker
+        position={has ? [lat, lng] : FALLBACK_CENTER}
+        icon={has ? PIN : PIN_APPROX}
+      />
       {/* Re-centres when the caller swaps in a different place. */}
       <MapMover lat={lat} lng={lng} />
       <MapResizer />

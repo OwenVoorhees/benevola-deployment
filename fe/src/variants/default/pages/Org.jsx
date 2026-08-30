@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Shell, {
-  Avatar, Btn, Chip, Crumbs, DateBlock, Field, Input, Area, Panel, State, Skeleton, Toast,
+  Avatar, Banner, Btn, Chip, Crumbs, DateBlock, Field, Input, Area, Panel,
+  SampleTag, State, Skeleton, Toast,
 } from '../parts';
 import DangerZone from '../../../Components/DangerZone';
 import ImageField from '../../../shared/ImageField';
@@ -63,15 +64,12 @@ export default function Org() {
           { label: editing ? (draft.name || 'Unnamed') : org.name },
         ]} />
 
-        {/* Banner is editable below, so it has to be shown here too. */}
-        {org.bannerImg && (
-          <div className="def-banner">
-            <img src={org.bannerImg} alt="" />
-          </div>
-        )}
+        {/* Banner is editable below, so it has to be shown here too. Always
+            drawn: Banner falls back to the brand band when nothing is set. */}
+        <Banner src={org.bannerImg} />
 
         <div className="def-profile">
-          <Avatar lg src={org.iconImg} name={org.name} />
+          <Avatar lg org src={org.iconImg} name={org.name} />
           <div style={{ minWidth: 0 }}>
             {editing ? (
               <Input
@@ -82,6 +80,12 @@ export default function Org() {
             ) : (
               <h1 className="def-h1" style={{ marginBottom: 2 }}>{org.name}</h1>
             )}
+            {/* Seeded content is labelled here as well as on the event page:
+                someone can arrive on an organization straight from a search,
+                and the profile has to say what it is before they email it. */}
+            <div className="def-chiprow" style={{ margin: '6px 0 8px' }}>
+              <SampleTag />
+            </div>
             <p className="def-muted">
               On Benevola since {new Date(org.createdAt).getFullYear()}
               {!o.eventsLoading && ` · ${o.events.length} posted`}

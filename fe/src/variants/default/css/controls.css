@@ -12,7 +12,7 @@
   color: var(--def-pri-ink);
   background: var(--def-pri);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--def-r-btn);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -147,7 +147,7 @@ textarea.def-field { resize: vertical; line-height: 1.6; }
   color: var(--def-ink-2);
   background: var(--def-ground-2);
   border: 1px solid var(--def-line);
-  border-radius: 999px;
+  border-radius: var(--def-r-btn);
 }
 .def-chip--accent { color: var(--def-pri-text); background: var(--def-pri-soft); border-color: transparent; }
 .def-chip--moss   { color: var(--def-moss); background: var(--def-moss-soft); border-color: transparent; }

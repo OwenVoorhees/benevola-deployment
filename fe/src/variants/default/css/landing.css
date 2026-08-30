@@ -178,7 +178,8 @@
 .def-section--photo .def-sub,
 .def-section--photo .def-check li { opacity: 0.9; }
 .def-section--photo .def-check svg { color: #fff; }
-.def-section--photo .def-eyebrow { color: #fff; opacity: 0.82; }
+.def-section--photo .def-eyebrow,
+.def-section--photo .def-kicker { color: #fff; opacity: 0.86; }
 
 /* The band's white ink is inherited, so anything with its own ground has to
    take it back — a panel is a light card sitting ON the photograph, and its
@@ -358,9 +359,14 @@
   color: inherit;
 }
 
+/* Square, and on the same corner as the buttons rather than the softer one the
+   editorial photographs keep. A listing is an object in a row of objects, so
+   it wants a shape that repeats cleanly; the landscape crop it had made each
+   card read as a small picture of a place instead. */
 .def-card-shot {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   margin-bottom: 10px;
+  border-radius: var(--def-r);
   box-shadow: var(--def-shadow);
   transition: box-shadow 240ms var(--def-ease), transform 240ms var(--def-ease);
 }
@@ -370,10 +376,9 @@
 }
 
 .def-card-date {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 620;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
   color: var(--def-pri-text);
 }
 

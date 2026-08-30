@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Shell, {
-  ArrowLink, Btn, DateBlock, Eyebrow, Photo, State, Skeleton, useFirstReveal,
+  ArrowLink, Btn, DateBlock, Kicker, Photo, State, Skeleton, useFirstReveal,
 } from '../parts';
 import { MapView } from '../../../shared/parts';
 import { useEventsSearch } from '../../../data/hooks';
@@ -80,7 +80,6 @@ export default function Landing() {
       <section className="def-hero">
         <div className="def-hero-inner">
           <div>
-            <Eyebrow>Volunteering, locally</Eyebrow>
             <h1>Find work that fits the week you actually have.</h1>
             <p className="def-hero-lede">
               Real shifts from local organizations, with a date, a place and a
@@ -108,7 +107,7 @@ export default function Landing() {
                 <span className="def-preview-dot" />
                 <span className="def-preview-dot" />
                 <span className="def-preview-dot" />
-                <span className="def-preview-title">OPEN NEAR YOU</span>
+                <span className="def-preview-title">Open near you</span>
               </div>
               <div className="def-preview-body">
                 {s.loading ? (
@@ -142,7 +141,6 @@ export default function Landing() {
             />
 
             <div className="def-intro-copy">
-              <Eyebrow>How it works</Eyebrow>
               {/* Hard break: the two halves are a pair, and letting the column
                   width decide where they split reads as an accident. */}
               <h2 className="def-h2">Organizations post the work.<br />You pick the shift.</h2>
@@ -179,7 +177,6 @@ export default function Landing() {
         <div className="def-wrap">
           <div className="def-local">
             <div className="def-local-copy">
-              <Eyebrow>Nearby</Eyebrow>
               <h2 className="def-h2">Close enough to actually get to.</h2>
               <p className="def-sub">
                 Everything on Benevola is around Raleigh — near enough to reach
@@ -208,7 +205,6 @@ export default function Landing() {
       <section className="def-section">
         <div className="def-wrap">
           <div className="def-section-head" style={{ marginBottom: 28 }}>
-            <Eyebrow>Open right now</Eyebrow>
             <h2 className="def-h2">Happening soon</h2>
           </div>
 
@@ -249,7 +245,7 @@ export default function Landing() {
         <div className="def-wrap">
           <div className="def-split">
             <div>
-              <Eyebrow>For organizations</Eyebrow>
+              <Kicker>Are you an organization?</Kicker>
               <h2 className="def-h2">Post a shift in about three minutes.</h2>
               <p className="def-sub">
                 Then watch the roster fill. Volunteers, hours and history stay in

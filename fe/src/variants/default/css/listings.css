@@ -32,16 +32,18 @@
 }
 .def-item:hover .def-date { background: var(--def-pri-soft); }
 .def-date b { font-size: 1.15rem; font-weight: 670; letter-spacing: -0.025em; }
-.def-date span { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--def-ink-3); }
+.def-date span { font-size: 0.72rem; letter-spacing: -0.005em; color: var(--def-ink-3); }
 
 .def-thumb {
   flex-shrink: 0;
-  width: 70px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--def-r-sm);
   object-fit: cover;
   background: var(--def-ground-2);
 }
+
+.def-item-end { display: flex; align-items: center; gap: 10px; }
 
 .def-item-body { min-width: 0; }
 .def-item-title { display: block; font-weight: 600; font-size: 0.97rem; margin-bottom: 3px; }

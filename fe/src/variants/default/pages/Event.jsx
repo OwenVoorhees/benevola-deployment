@@ -108,10 +108,10 @@ export default function Event() {
               </>
             ) : (
               <>
-                {/* The one place the Sample tag appears. This is where someone
-                    decides whether to turn up, so it is where the listing has to
-                    say it is not real — browsing does not need labelling on every
-                    row. */}
+                {/* Where someone decides whether to turn up, so it is where the
+                    listing has to say it is not real. The organization pages
+                    carry the same tag; event rows still do not, because a
+                    column of identical chips down a list stops being read. */}
                 <div className="def-chiprow" style={{ marginBottom: 22 }}>
                   <SampleTag />
                   {event.tags.map(slug => <Chip key={slug} tone="accent">{tags.nameOf(slug)}</Chip>)}
@@ -126,7 +126,7 @@ export default function Event() {
                   <img
                     src={event.heroImage}
                     alt=""
-                    style={{ width: '100%', borderRadius: 'var(--def-r-lg)', marginTop: 24 }}
+                    style={{ width: '100%', borderRadius: 'var(--def-r)', marginTop: 24 }}
                   />
                 )}
 

@@ -119,13 +119,33 @@
 .def-muted { color: var(--def-ink-3); font-size: 0.85rem; }
 .def-hint  { display: block; margin-top: 6px; color: var(--def-ink-3); font-size: 0.8rem; }
 
+/* Sentence case, not tracked-out capitals. A label set in wide capitals reads
+   as a system message rather than as something a person wrote, and at this
+   size it is also the hardest thing on the page to actually read. The job it
+   was doing — marking a line as a label rather than as prose — is done here by
+   weight and colour instead. */
 .def-eyebrow {
   display: inline-block;
   margin-bottom: 12px;
-  font-size: 0.735rem;
-  font-weight: 640;
-  letter-spacing: 0.085em;
-  text-transform: uppercase;
+  font-size: 0.83rem;
+  font-weight: 620;
+  letter-spacing: -0.005em;
+  color: var(--def-pri-text);
+}
+
+/* A lead-in addressed to the reader, where a label used to sit. It is a
+   sentence, so it is set as one: serif, italic, at reading size. This is the
+   only place the display face appears, which is what makes it read as an
+   aside rather than as another heading. */
+.def-kicker {
+  display: block;
+  margin-bottom: 12px;
+  font-family: var(--def-font-display);
+  font-size: 1.16rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.3;
   color: var(--def-pri-text);
 }
 

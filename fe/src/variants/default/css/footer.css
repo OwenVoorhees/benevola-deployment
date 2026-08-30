@@ -19,11 +19,10 @@
 .def-foot-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .def-foot-cols h4 {
   margin: 0 0 12px;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 640;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--def-ink-3);
+  letter-spacing: -0.005em;
+  color: var(--def-ink-2);
 }
 .def-foot-cols a {
   display: block;
