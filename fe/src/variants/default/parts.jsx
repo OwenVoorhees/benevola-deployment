@@ -175,22 +175,45 @@ export const Meter = ({ value, max }) => {
   );
 };
 
+/* Loading an uploaded picture without leaving a hole in the page.
+
+   Every slot below paints its own ground first — the mark on brand green for
+   an organization, an initial for a person, the bands for a banner — and the
+   uploaded file fades in on top once it has actually decoded. The point is
+   that nothing is ever blank while a request is in flight: these files come
+   straight from the bucket at whatever size they were uploaded, so on a slow
+   connection that wait is real and used to be an empty box.
+
+   `loaded` needs the ref as well as onLoad. A file already in the browser's
+   cache can finish before React attaches the handler, and then onLoad never
+   fires and the image stays at opacity 0 for good. The ref runs after the
+   element exists, so it catches exactly that case. */
+function useLoadedImage(src) {
+  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  /* Reset on src so a list that re-renders with different records does not
+     inherit an earlier one's state. */
+  useEffect(() => { setFailed(false); setLoaded(false); }, [src]);
+
+  return {
+    show: Boolean(src) && !failed,
+    className: loaded ? ' is-on' : '',
+    ref: (el) => { if (el?.complete && el.naturalWidth > 0) setLoaded(true); },
+    onLoad: () => setLoaded(true),
+    onError: () => setFailed(true),
+  };
+}
+
 /* `org` switches the slot from a person's to an organization's: a rounded tile
    rather than a disc, because a logo cropped to a circle loses its corners,
-   and the Benevola mark rather than an initial when nothing has been
-   uploaded. A letter in a tinted circle reads as a missing file; the mark on a
-   solid brand ground reads as a deliberate default. People keep the initial —
-   theirs is a name, and a site logo standing in for a face would be worse. */
+   and the Benevola mark on brand green as the ground. A letter in a tinted
+   circle reads as a missing file; the mark reads as a deliberate default, and
+   because it is inline SVG it is there on the first frame whether or not a
+   logo was ever uploaded. People keep the initial — theirs is a name, and a
+   site logo standing in for a face would be worse. */
 export const Avatar = ({ src, name, lg, org }) => {
-  /* A stored image can outlive the file it points at — an R2 object gets
-     deleted, a headshot has not been added yet — and a dead URL renders the
-     browser's broken-image glyph, which looks like a bug rather than an empty
-     slot. Fall back to the initial instead. Reset on src so a list that
-     re-renders with different people does not keep a stale failure. */
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
-
-  const has = Boolean(src) && !failed;
+  const img = useLoadedImage(src);
 
   return (
     <span
@@ -198,44 +221,70 @@ export const Avatar = ({ src, name, lg, org }) => {
         'def-avatar',
         lg ? 'def-avatar--lg' : '',
         org ? 'def-avatar--org' : '',
-        org && !has ? 'def-avatar--mark' : '',
       ].filter(Boolean).join(' ')}
     >
-      {has ? (
-        <img src={src} alt="" onError={() => setFailed(true)} />
-      ) : org ? (
-        /* Sized by CSS, not by this number — see .def-avatar--mark svg. */
-        <Mark size={24} fill="var(--def-pri-ink)" />
-      ) : (
-        <span>{(name || '?')[0].toUpperCase()}</span>
+      {org
+        /* Sized by CSS, not by this number — see .def-avatar--org svg. */
+        ? <Mark size={24} fill="var(--def-pri-ink)" />
+        : <span className="def-avatar-ink">{(name || '?')[0].toUpperCase()}</span>}
+
+      {img.show && (
+        <img
+          className={'def-avatar-img' + img.className}
+          src={src}
+          alt=""
+          decoding="async"
+          /* The big one is the page's identity and sits at the top; the small
+             ones are list rows, most of which are below the fold and should
+             not compete with what the visitor can already see. */
+          loading={lg ? 'eager' : 'lazy'}
+          fetchPriority={lg ? 'high' : 'auto'}
+          ref={img.ref}
+          onLoad={img.onLoad}
+          onError={img.onError}
+        />
       )}
     </span>
   );
 };
 
 /* An organization's banner, which every organization has whether or not one
-   was uploaded. A missing file, a dead URL or a blank field all land on the
-   same flat brand band with the mark set into it — a placeholder that looks
-   chosen, instead of a gap at the top of the page or the browser's
-   broken-image glyph. */
-export const Banner = ({ src, alt = '' }) => {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
+   was uploaded.
 
-  if (src && !failed) {
-    return (
-      <div className="def-banner">
-        <img src={src} alt={alt} onError={() => setFailed(true)} />
-      </div>
-    );
-  }
+   The default is drawn rather than fetched: flat bands of the brand green, in
+   CSS, so it costs no request and is painted before anything has come back
+   from the network. It is also what a blank field, a deleted object and a dead
+   URL all land on, so the top of the page is never a gap or the browser's
+   broken-image glyph. An uploaded picture fades in over it. */
+export const Banner = ({ src, alt = '' }) => {
+  const img = useLoadedImage(src);
 
   return (
-    <div className="def-banner def-banner--default" aria-hidden="true">
-      <Mark size={92} fill="var(--def-pri-ink)" />
+    <div className="def-banner">
+      <span className="def-banner-bands" aria-hidden="true">
+        {BANDS.map(i => <span key={i} />)}
+      </span>
+
+      {img.show && (
+        <img
+          className={'def-banner-img' + img.className}
+          src={src}
+          alt={alt}
+          decoding="async"
+          fetchPriority="high"
+          ref={img.ref}
+          onLoad={img.onLoad}
+          onError={img.onError}
+        />
+      )}
     </div>
   );
 };
+
+/* The bands are empty spans because their widths and shades live in CSS, where
+   the rest of the theme's colour does — see .def-banner-bands. Nine is enough
+   for the run not to read as a repeat at banner width. */
+const BANDS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 /* A photograph that fails to a flat brand tile rather than to the browser's
    broken-image glyph.

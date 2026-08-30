@@ -40,20 +40,32 @@
   font-weight: 660;
   overflow: hidden;
 }
-.def-avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* The ground and the uploaded file share one grid cell, so the fallback is
+   painted immediately and the photograph arrives over it rather than after a
+   blank box. */
+.def-avatar > * { grid-area: 1 / 1; }
+
+.def-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+.def-avatar-img.is-on { opacity: 1; }
+
 .def-avatar--lg { width: 66px; height: 66px; font-size: 1.5rem; }
 
 /* An organization's slot is a tile, not a disc — see the Avatar `org` prop.
-   The radius tracks the size so the corner stays the same weight on both. */
-.def-avatar--org    { border-radius: var(--def-r-sm); }
-.def-avatar--org.def-avatar--lg { border-radius: var(--def-r); }
-
-/* No logo uploaded: the mark, inverted onto a solid brand ground. */
-.def-avatar--mark {
+   The radius tracks the size so the corner stays the same weight on both, and
+   the ground is the mark inverted onto solid brand. */
+.def-avatar--org {
+  border-radius: var(--def-r-sm);
   background: var(--def-pri);
   color: var(--def-pri-ink);
 }
-.def-avatar--mark svg { width: 64%; height: 64%; }
+.def-avatar--org.def-avatar--lg { border-radius: var(--def-r); }
+.def-avatar--org svg { width: 64%; height: 64%; }
 
 .def-profile {
   display: flex;

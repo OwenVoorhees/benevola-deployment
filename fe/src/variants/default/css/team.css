@@ -79,21 +79,53 @@
   .def-team-card .def-avatar { width: 76px; height: 76px; font-size: 1.6rem; }
 }
 
+/* The drawn default and any uploaded picture stack in the same box. */
 .def-banner {
+  position: relative;
+  height: 200px;
   margin-bottom: 24px;
   border-radius: var(--def-r-lg);
   overflow: hidden;
   background: var(--def-ground-2);
 }
-.def-banner img { display: block; width: 100%; height: 200px; object-fit: cover; }
 
-/* Nothing uploaded, or the file has gone. Flat brand with the mark set into
-   it — the same inversion the empty logo tile uses, at banner size, so the two
-   placeholders on the page read as one decision rather than two gaps. */
-.def-banner--default {
-  display: grid;
-  place-items: center;
-  height: 200px;
-  background: var(--def-pri);
+.def-banner-img {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 300ms ease;
 }
-.def-banner--default svg { opacity: 0.92; }
+.def-banner-img.is-on { opacity: 1; }
+
+/* THE DEFAULT BANNER — solid bands, no blend.
+
+   Flat fields of colour with hard edges between them, not a ramp: this theme
+   has no gradients in it anywhere, and a banner that fades across would be the
+   one place it did. Every band is the brand hue with its lightness and chroma
+   pinned, so the whole thing moves with --brand-primary and there is no hex
+   here to fall out of step with the rest of the palette.
+
+   The widths are uneven and the shades are deliberately out of order. Even
+   bands running light to dark read as a progress bar; scattered ones read as a
+   pattern, which is what this is. */
+.def-banner-bands {
+  display: flex;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.def-banner-bands span { display: block; height: 100%; }
+
+.def-banner-bands span:nth-child(1) { flex: 7; background: oklch(from var(--brand-primary) 44% 0.105 h); }
+.def-banner-bands span:nth-child(2) { flex: 3; background: oklch(from var(--brand-primary) 71% 0.115 h); }
+.def-banner-bands span:nth-child(3) { flex: 9; background: oklch(from var(--brand-primary) 33% 0.075 h); }
+.def-banner-bands span:nth-child(4) { flex: 4; background: oklch(from var(--brand-primary) 58% 0.125 h); }
+.def-banner-bands span:nth-child(5) { flex: 6; background: oklch(from var(--brand-primary) 80% 0.095 h); }
+.def-banner-bands span:nth-child(6) { flex: 3; background: oklch(from var(--brand-primary) 38% 0.09 h);  }
+.def-banner-bands span:nth-child(7) { flex: 8; background: oklch(from var(--brand-primary) 65% 0.13 h);  }
+.def-banner-bands span:nth-child(8) { flex: 4; background: oklch(from var(--brand-primary) 50% 0.115 h); }
+.def-banner-bands span:nth-child(9) { flex: 6; background: oklch(from var(--brand-primary) 74% 0.105 h); }

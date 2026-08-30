@@ -178,8 +178,8 @@
 .def-section--photo .def-sub,
 .def-section--photo .def-check li { opacity: 0.9; }
 .def-section--photo .def-check svg { color: #fff; }
-.def-section--photo .def-eyebrow,
-.def-section--photo .def-kicker { color: #fff; opacity: 0.86; }
+.def-section--photo .def-eyebrow { color: #fff; opacity: 0.86; }
+.def-section--photo .def-kicker  { color: #fff; opacity: 1; }
 
 /* The band's white ink is inherited, so anything with its own ground has to
    take it back — a panel is a light card sitting ON the photograph, and its
