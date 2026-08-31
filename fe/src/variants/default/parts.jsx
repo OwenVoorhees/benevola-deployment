@@ -261,9 +261,14 @@ export const Banner = ({ src, alt = '' }) => {
 
   return (
     <div className="def-banner">
-      <span className="def-banner-bands" aria-hidden="true">
-        {BANDS.map(i => <span key={i} />)}
-      </span>
+      <svg
+        className="def-banner-bands"
+        viewBox="0 0 1200 200"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        {BANDS.map((d, i) => <path key={i} d={d} />)}
+      </svg>
 
       {img.show && (
         <img
@@ -281,10 +286,29 @@ export const Banner = ({ src, alt = '' }) => {
   );
 };
 
-/* The bands are empty spans because their widths and shades live in CSS, where
-   the rest of the theme's colour does — see .def-banner-bands. Nine is enough
-   for the run not to read as a repeat at banner width. */
-const BANDS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+/* The banner's bands.
+
+   Each path is a wave plus everything under it, and they are painted in order,
+   so every one covers the tail of the one before and what is left showing is a
+   band. The first is the full rectangle — the ground the rest sit on.
+
+   Only the shape is here; the shades are in CSS with the rest of the theme's
+   colour. The viewBox is 200 tall to match the banner exactly, so with
+   preserveAspectRatio="none" only the width ever stretches and the waves keep
+   their height whatever the column does.
+
+   The crests are set at different phases on purpose. Waves that peak in the
+   same places read as one shape drawn six times; offset, they read as a
+   landscape. */
+const BANDS = [
+  'M0,0 H1200 V200 H0 Z',
+  'M0,30 C150,10 300,46 450,32 C620,16 760,52 900,38 C1010,27 1120,40 1200,34 V200 H0 Z',
+  'M0,62 C140,44 280,80 420,66 C580,50 700,86 850,74 C980,64 1100,78 1200,70 V200 H0 Z',
+  'M0,88 C120,108 260,74 400,90 C560,108 690,76 830,92 C960,107 1090,84 1200,96 V200 H0 Z',
+  'M0,124 C160,104 300,140 450,126 C600,112 740,146 880,132 C1000,120 1110,134 1200,128 V200 H0 Z',
+  'M0,150 C130,168 270,136 410,152 C570,170 700,138 840,154 C970,168 1090,146 1200,158 V200 H0 Z',
+  'M0,178 C150,162 290,192 440,180 C600,167 730,194 870,184 C1000,175 1110,186 1200,180 V200 H0 Z',
+];
 
 /* A photograph that fails to a flat brand tile rather than to the browser's
    broken-image glyph.

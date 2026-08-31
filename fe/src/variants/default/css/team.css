@@ -103,29 +103,29 @@
 
 /* THE DEFAULT BANNER — solid bands, no blend.
 
-   Flat fields of colour with hard edges between them, not a ramp: this theme
-   has no gradients in it anywhere, and a banner that fades across would be the
-   one place it did. Every band is the brand hue with its lightness and chroma
-   pinned, so the whole thing moves with --brand-primary and there is no hex
-   here to fall out of step with the rest of the palette.
+   Waves running across the banner, each a flat field of colour with a hard
+   edge against the next. Not a ramp: this theme has no gradients in it
+   anywhere, and a banner that faded across would be the one place it did.
+   Every band is the brand hue with its lightness and chroma pinned, so the
+   whole thing moves with --brand-primary and there is no hex here to fall out
+   of step with the rest of the palette.
 
-   The widths are uneven and the shades are deliberately out of order. Even
-   bands running light to dark read as a progress bar; scattered ones read as a
-   pattern, which is what this is. */
+   The shades are deliberately out of order. A run from light to dark reads as
+   a progress bar; scattered, it reads as a pattern, which is what this is.
+   Shape is in parts.jsx — see BANDS. */
 .def-banner-bands {
-  display: flex;
+  display: block;
   position: absolute;
   inset: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
 }
-.def-banner-bands span { display: block; height: 100%; }
 
-.def-banner-bands span:nth-child(1) { flex: 7; background: oklch(from var(--brand-primary) 44% 0.105 h); }
-.def-banner-bands span:nth-child(2) { flex: 3; background: oklch(from var(--brand-primary) 71% 0.115 h); }
-.def-banner-bands span:nth-child(3) { flex: 9; background: oklch(from var(--brand-primary) 33% 0.075 h); }
-.def-banner-bands span:nth-child(4) { flex: 4; background: oklch(from var(--brand-primary) 58% 0.125 h); }
-.def-banner-bands span:nth-child(5) { flex: 6; background: oklch(from var(--brand-primary) 80% 0.095 h); }
-.def-banner-bands span:nth-child(6) { flex: 3; background: oklch(from var(--brand-primary) 38% 0.09 h);  }
-.def-banner-bands span:nth-child(7) { flex: 8; background: oklch(from var(--brand-primary) 65% 0.13 h);  }
-.def-banner-bands span:nth-child(8) { flex: 4; background: oklch(from var(--brand-primary) 50% 0.115 h); }
-.def-banner-bands span:nth-child(9) { flex: 6; background: oklch(from var(--brand-primary) 74% 0.105 h); }
+.def-banner-bands path:nth-child(1) { fill: oklch(from var(--brand-primary) 33% 0.075 h); }
+.def-banner-bands path:nth-child(2) { fill: oklch(from var(--brand-primary) 71% 0.115 h); }
+.def-banner-bands path:nth-child(3) { fill: oklch(from var(--brand-primary) 44% 0.105 h); }
+.def-banner-bands path:nth-child(4) { fill: oklch(from var(--brand-primary) 80% 0.095 h); }
+.def-banner-bands path:nth-child(5) { fill: oklch(from var(--brand-primary) 55% 0.125 h); }
+.def-banner-bands path:nth-child(6) { fill: oklch(from var(--brand-primary) 38% 0.09 h);  }
+.def-banner-bands path:nth-child(7) { fill: oklch(from var(--brand-primary) 66% 0.13 h);  }
